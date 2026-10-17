@@ -189,6 +189,8 @@ ul,ol{margin:0;padding:0;list-style:none}
 .mode-play .cta .lbl-read{display:none}
 .credit{font-size:14px;font-weight:500;letter-spacing:.06em;color:var(--dim)}
 .credit b{color:var(--text);font-weight:700}
+.hint{font-size:12.5px;letter-spacing:.04em;color:var(--dim)}
+.mode-read .hint{display:none}
 .big-quote{font:900 clamp(26px,3.4cqi,44px)/1.25 var(--f-head);text-wrap:balance}
 .big-quote em{font-style:normal;color:var(--ok)}
 .chain{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
@@ -527,7 +529,10 @@ ul,ol{margin:0;padding:0;list-style:none}
 .t-line{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;align-items:start}
 .t-line img{width:48px;height:48px;border-radius:50%;object-fit:cover;object-position:50% 16%;background:var(--deck-hi);border:2px solid var(--paper)}
 .t-line.arale img{border-color:var(--int)}
-.t-line .bubble{font-size:15px}
+.t-line .bubble{font-size:15px;padding-right:48px}
+.t-play{position:absolute;right:9px;top:50%;width:30px;height:30px;margin-top:-15px;display:grid;place-items:center;border-radius:50%;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:.7;z-index:1}
+.t-play:hover{opacity:1}
+.t-play svg{width:15px;height:15px}
 
 /* ---------- 底部控制列 ---------- */
 .transport{display:flex;align-items:center;gap:10px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--void-glass);border-top:1px solid var(--rule);z-index:20}
@@ -545,6 +550,21 @@ ul,ol{margin:0;padding:0;list-style:none}
 .seg.is-done .seg-fill{transform:scaleX(1);opacity:.55}
 .seg:hover>span{background:color-mix(in srgb,var(--accent) 35%,var(--rule))}
 .count{font:600 13px var(--f-latin);color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ctl--sm{width:32px;height:32px}
+.ctl[aria-pressed="true"]{border-color:var(--vul);background:var(--vul-soft);color:var(--vul)}
+.sel-wrap{display:flex;align-items:center;gap:6px;flex:none;min-width:0}
+.sel-ic{width:18px;height:18px;flex:none;color:var(--accent);transition:color .6s}
+.sel{height:36px;max-width:100%;padding:0 8px 0 10px;border-radius:8px;border:1px solid var(--rule);background:var(--deck);color:var(--text);font:700 13px var(--f-body);cursor:pointer}
+.sel:hover{border-color:var(--accent)}
+.sel option{background:var(--deck);color:var(--text)}
+.transport .sel-scene{width:196px}
+.sel-top{display:none;flex:1;min-width:0;justify-content:center}
+.sel-top .sel{width:min(260px,100%)}
+.mode-read .sel-top{display:flex}
+.mode-read .now{display:none}
+@media (max-width:1100px){.count{display:none}}
+@media (max-width:900px){.segs{visibility:hidden}.transport .sel-scene{width:160px}}
+@media (max-width:520px){.brand-name{display:none}}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -561,6 +581,11 @@ ul,ol{margin:0;padding:0;list-style:none}
   <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></symbol>
   <symbol id="i-replay" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></symbol>
   <symbol id="i-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5l13 4-1.6 4.8L2 11.5z"/><path d="M8.5 13.6L7.6 19H4M16 9l4.5-1.5M18.5 6.5l1 4"/></symbol>
   <symbol id="i-net" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v4M12 11l-6 5.5M12 11l6 5.5"/></symbol>
@@ -601,6 +626,7 @@ ul,ol{margin:0;padding:0;list-style:none}
       <span class="brand-name">CTI 情資作業全景</span>
     </div>
     <p class="now" id="now"><b>01 / 13</b>開場</p>
+    <label class="sel-top"><span class="sr-only">跳到主題</span><select class="sel sel-scene" id="selSceneTop" title="跳到主題"></select></label>
     <span class="top-credit">製作：Allan顧問，2027/10/17</span>
     <div class="top-actions">
       <button class="btn" type="button" id="modeBtn" data-act="mode"><svg><use href="#i-read"/></svg><span class="mode-lbl">閱讀模式</span></button>
@@ -635,6 +661,7 @@ ul,ol{margin:0;padding:0;list-style:none}
                   <button class="cta" type="button" data-act="start"><svg><use href="#i-play"/></svg><span class="lbl-play">開始播放</span><span class="lbl-read">播放動畫版</span></button>
                 </div>
                 <p class="credit">製作：<b>Allan顧問</b>，2027/10/17</p>
+                <p class="hint">空白鍵 播放／暫停｜← → 上一句／下一句｜PgUp／PgDn 換段｜M 靜音｜F 全螢幕</p>
               </div>
               <figure class="hero-host hero-host--arale" data-speaker="arale">
                 <div class="bubble bubble--arale hero-bubble"><span class="bubble-name">AI 助理 阿拉蕾</span><span class="bubble-text"></span></div>
@@ -1227,15 +1254,24 @@ ul,ol{margin:0;padding:0;list-style:none}
   </main>
 
   <nav class="transport" aria-label="播放控制">
-    <button class="ctl" type="button" data-act="prev" aria-label="上一段"><svg><use href="#i-prev"/></svg></button>
-    <button class="ctl ctl--main" type="button" data-act="toggle" id="toggleBtn" aria-label="自動播放"><svg><use href="#i-play"/></svg></button>
-    <button class="ctl" type="button" data-act="next" aria-label="下一段"><svg><use href="#i-next"/></svg></button>
+    <button class="ctl" type="button" data-act="prev-scene" title="上一段（PgUp）" aria-label="上一段"><svg><use href="#i-prev"/></svg></button>
+    <button class="ctl ctl--sm" type="button" data-act="prev-line" title="上一句（←）" aria-label="上一句"><svg><use href="#i-chev-l"/></svg></button>
+    <button class="ctl ctl--main" type="button" data-act="toggle" id="toggleBtn" title="播放（空白鍵）" aria-label="播放（空白鍵）"><svg><use href="#i-play"/></svg></button>
+    <button class="ctl ctl--sm" type="button" data-act="next-line" title="下一句（→）" aria-label="下一句"><svg><use href="#i-chev-r"/></svg></button>
+    <button class="ctl" type="button" data-act="next-scene" title="下一段（PgDn）" aria-label="下一段"><svg><use href="#i-next"/></svg></button>
+    <label class="sel-wrap" title="切換主題"><svg class="sel-ic" aria-hidden="true"><use href="#i-list"/></svg><span class="sr-only">切換主題</span><select class="sel sel-scene" id="selScene"></select></label>
     <ol class="segs" id="segs"></ol>
     <span class="count" id="count">01 / 13</span>
+    <label class="sel-wrap" title="語速"><span class="sr-only">語速</span><select class="sel sel-rate" id="selRate"><option value="1">1.0x</option><option value="1.15">1.15x</option><option value="1.3">1.3x</option></select></label>
+    <button class="ctl" type="button" data-act="mute" id="muteBtn" title="靜音（M）" aria-label="靜音" aria-pressed="false"><svg><use href="#i-vol"/></svg></button>
   </nav>
   <p class="sr-only" aria-live="polite" id="srLine"></p>
 </div>
 
+<script>
+/*{{SCRIPT_JS}}*/
+/*{{AUDIO_JS}}*/
+</script>
 <script>
 (() => {
 'use strict';
@@ -1243,81 +1279,23 @@ ul,ol{margin:0;padding:0;list-style:none}
 /* 角色表情精靈圖（建置時內嵌） */
 const SPR = {
   allan: {
-    smile: '{{sprite:allan-smile}}', laugh: '{{sprite:allan-laugh}}',
-    think: '{{sprite:allan-think}}', point: '{{sprite:allan-point}}'
+    smile: '{{sprite:allan-smile}}', laugh: '{{sprite:allan-laugh}}', think: '{{sprite:allan-think}}',
+    scratch: '{{sprite:allan-scratch}}', wow: '{{sprite:allan-wow}}', point: '{{sprite:allan-point}}',
+    wink: '{{sprite:allan-wink}}', shock: '{{sprite:allan-shock}}'
   },
   arale: {
     laugh: '{{sprite:arale-laugh}}', think: '{{sprite:arale-think}}', wow: '{{sprite:arale-wow}}',
-    confused: '{{sprite:arale-confused}}', explain: '{{sprite:arale-explain}}',
+    confused: '{{sprite:arale-confused}}', explain: '{{sprite:arale-explain}}', sad: '{{sprite:arale-sad}}',
     wink: '{{sprite:arale-wink}}', fight: '{{sprite:arale-fight}}'
   }
 };
 const NAMES = { allan: 'Allan 顧問', arale: 'AI 助理 阿拉蕾' };
-
-/* 串場台詞：[說話者, 表情, 台詞] */
-const SCRIPT = {
-  title: [
-    ['arale', 'laugh', '大家好！我是 AI 小助手阿拉蕾。今天跟 Allan 顧問一起，帶大家走完整套情資作業！'],
-    ['allan', 'smile', '資安不能靠感覺。要知道外面發生什麼、裡面發生什麼，還有自己哪裡有洞。']
-  ],
-  why: [
-    ['allan', 'point', 'ISO 27001:2022 新增了 A.5.7 威脅情資。稽核時我一定會問：情資從哪來？誰在看？看完做了什麼？'],
-    ['arale', 'wow', '原來情資還分策略、戰術、作業三層，給老闆看的跟給 SOC 看的不一樣！'],
-    ['allan', 'smile', '沒錯。好的情資要相關、有洞察、有脈絡、可行動，少一樣都很難用。']
-  ],
-  overview: [
-    ['arale', 'explain', '三條資料流：內部情資、外部情資、脆弱性識別，全部匯進情資融合中心！'],
-    ['allan', 'point', '重點在後半段：分析完要變成風險處理、防護調整，最後回到管理審查，才算閉環。']
-  ],
-  cycle: [
-    ['arale', 'think', '所以情資作業是一個循環？每轉一圈就更準一點？'],
-    ['allan', 'laugh', '對！第六步「回饋」最常被忽略，卻是稽核員檢視持續改善的地方。']
-  ],
-  internal: [
-    ['arale', 'fight', '內部情資我最拿手！日誌一進來，我就幫忙找出異常模式。'],
-    ['allan', 'think', '先顧好基本功：日誌有沒有集中保存、時間有沒有同步、保存多久。不然出事時連證據都拿不出來。'],
-    ['arale', 'wink', '還有同仁回報的可疑郵件，也是第一手情資喔！']
-  ],
-  external: [
-    ['allan', 'point', '外部情資不是越多越好，關鍵是：跟我們有沒有關係？'],
-    ['arale', 'wink', '交給我！我先用資產清冊過濾，只把相關的情資推給你～'],
-    ['allan', 'smile', '也別忘了 ISAC 和同業交流，很多攻擊會先在同產業出現。']
-  ],
-  vuln: [
-    ['arale', 'wow', '哇，脆弱性識別有這麼多種方法！'],
-    ['allan', 'smile', '它們是互補的：弱掃看廣度、滲透測試看深度、原碼檢測從源頭擋、資安健診看有沒有已經被入侵。'],
-    ['allan', 'point', '滲透測試前一定要先取得授權、界定範圍，避免影響營運。']
-  ],
-  priority: [
-    ['arale', 'think', '只看 CVSS 的話，第一名應該是測試環境那個 9.1 吧？'],
-    ['allan', 'point', '再加上脈絡：有沒有被利用、資產多重要、是不是對外。排序就完全不一樣了。'],
-    ['arale', 'laugh', '對外的 VPN 直接跳到 P1！這就是以風險為基礎的處理！']
-  ],
-  ai: [
-    ['arale', 'fight', '這段交給我！上百則情資，我很快就能讀完、分類、比對資產。'],
-    ['allan', 'point', '很好，但最後按下核准的是人。AI 提供建議，責任還是在組織。'],
-    ['arale', 'wink', '了解！我的每個建議都會留下紀錄，等你覆核～']
-  ],
-  action: [
-    ['allan', 'smile', '每一筆情資都要有結論。就算是「現行不影響」，也要寫下判斷理由。'],
-    ['arale', 'laugh', '這樣稽核員來的時候，就有完整的證據鏈啦！']
-  ],
-  evidence: [
-    ['allan', 'point', '站在稽核員的角度，我會從這六點抽樣查核。'],
-    ['arale', 'explain', '紀錄格式也幫大家準備好了：情資彙整、重大漏洞處理、資安月報，一次到位！']
-  ],
-  cadence: [
-    ['arale', 'confused', '要做的事好多，時間要怎麼排呢？'],
-    ['allan', 'smile', '固定節奏加上事件觸發。頻率依資安責任等級、法規與風險調整，再用 KPI 檢視成效。']
-  ],
-  finale: [
-    ['arale', 'laugh', '謝謝大家！情資作業有任何問題，歡迎找 Allan 顧問～'],
-    ['allan', 'laugh', '情資的價值在於轉化為行動。看得見、排得準、證得出，稽核自然不用怕！']
-  ]
-};
-/* 有示範動畫的場景，至少停留這麼久 */
-const MIN_MS = { cycle: 17000, internal: 16000, external: 16000, vuln: 18000, priority: 18000, ai: 19000, action: 16000, evidence: 16000 };
-const TYPE_MS = 34;
+const SCRIPT = window.CTI_SCRIPT || {};   // 串場台詞（src/script.js）
+const AUD = window.CTI_AUDIO || {};       // 語音檔（tools/gen_audio.py 產生）
+/* 有示範動畫的場景，至少停留這麼久（毫秒） */
+const MIN_MS = { cycle: 14000, internal: 12000, priority: 14000, ai: 15000, action: 12000, evidence: 12000 };
+const GAP_LINE = 380;
+const GAP_SCENE = 1200;
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -1331,28 +1309,34 @@ const nowEl = $('#now');
 const srLine = $('#srLine');
 const toggleBtn = $('#toggleBtn');
 const modeBtn = $('#modeBtn');
+const muteBtn = $('#muteBtn');
+const selRate = $('#selRate');
+const selScenes = $$('.sel-scene');
 const dockHosts = $$('#dock .host');
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const st = { i: 0, playing: false, mode: 'play', token: 0, anim: null, k: 1 };
+const st = { i: 0, line: -1, playing: false, mode: 'play', token: 0, k: 1, rate: 1, muted: false, t0: 0, fill: null };
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const pad = n => String(n).padStart(2, '0');
-const holdMs = t => 1300 + t.length * 55;
-const lineMs = t => (reduce ? 0 : t.length * TYPE_MS) + holdMs(t);
-const sceneMs = id => Math.max(MIN_MS[id] || 11000, 900 + (SCRIPT[id] || []).reduce((a, l) => a + lineMs(l[2]), 0) + 1800);
 const faceSrc = (who, face) => SPR[who][face] || Object.values(SPR[who])[0];
+const linesOf = scene => SCRIPT[scene.id] || [];
+const clipId = (scene, n) => scene.id + '_' + pad(n + 1);
+const lineMs = (scene, n) => {
+  const c = AUD[clipId(scene, n)];
+  return c ? c.dur * 1000 : 900 + linesOf(scene)[n][2].length * 210;
+};
 
-/* ---------- 閱讀模式用的對話紀錄 ---------- */
+/* ---------- 閱讀模式用的對話紀錄（可點播每句語音） ---------- */
 scenes.forEach(scene => {
-  const lines = SCRIPT[scene.id];
-  if (!lines) return;
+  const lines = linesOf(scene);
+  if (!lines.length) return;
   const box = document.createElement('div');
   box.className = 'transcript';
   const head = document.createElement('p');
   head.className = 'mini-title';
   head.textContent = '串場對話';
   box.appendChild(head);
-  lines.forEach(([who, face, text]) => {
+  lines.forEach(([who, face, text], n) => {
     const row = document.createElement('div');
     row.className = 't-line ' + who;
     const img = document.createElement('img');
@@ -1367,13 +1351,22 @@ scenes.forEach(scene => {
     tx.className = 'bubble-text';
     tx.textContent = text;
     bub.append(nm, tx);
+    if (AUD[clipId(scene, n)]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 't-play';
+      b.dataset.clip = clipId(scene, n);
+      b.setAttribute('aria-label', '播放這句語音');
+      b.innerHTML = '<svg><use href="#i-vol"/></svg>';
+      bub.appendChild(b);
+    }
     row.append(img, bub);
     box.appendChild(row);
   });
   $('.scene-inner', scene).appendChild(box);
 });
 
-/* ---------- 進度段 ---------- */
+/* ---------- 進度段與主題選單 ---------- */
 scenes.forEach((s, k) => {
   const li = document.createElement('li');
   const b = document.createElement('button');
@@ -1382,9 +1375,15 @@ scenes.forEach((s, k) => {
   b.title = pad(k + 1) + ' ' + s.dataset.name;
   b.setAttribute('aria-label', '跳到第 ' + (k + 1) + ' 段：' + s.dataset.name);
   b.innerHTML = '<span><span class="seg-fill"></span></span>';
-  b.addEventListener('click', () => go(k));
+  b.addEventListener('click', () => go(k, 0));
   li.appendChild(b);
   segsEl.appendChild(li);
+  selScenes.forEach(sel => {
+    const o = document.createElement('option');
+    o.value = k;
+    o.textContent = pad(k + 1) + '　' + s.dataset.name;
+    sel.appendChild(o);
+  });
 });
 const segs = $$('.seg', segsEl);
 
@@ -1397,10 +1396,85 @@ function updateChrome() {
   nowEl.append(b, document.createTextNode(s.dataset.name));
   countEl.textContent = pad(st.i + 1) + ' / ' + total;
   root.dataset.accent = s.dataset.accent;
+  selScenes.forEach(sel => { sel.value = String(st.i); });
+  if (st.fill) { st.fill.cancel(); st.fill = null; }
   segs.forEach((seg, k) => {
     seg.classList.toggle('is-done', k < st.i);
     seg.classList.toggle('is-now', k === st.i);
+    $('.seg-fill', seg).style.transform = k === st.i ? 'scaleX(0)' : '';
     if (k === st.i) seg.setAttribute('aria-current', 'step'); else seg.removeAttribute('aria-current');
+  });
+}
+function progressLine(scene, n, instant) {
+  const total = Math.max(1, linesOf(scene).length);
+  const fill = $('.seg-fill', segs[st.i]);
+  if (st.fill) { st.fill.cancel(); st.fill = null; }
+  const a = 'scaleX(' + (n / total) + ')';
+  const b = 'scaleX(' + ((n + 1) / total) + ')';
+  if (instant || !fill.animate) { fill.style.transform = b; return; }
+  fill.style.transform = a;
+  st.fill = fill.animate([{ transform: a }, { transform: b }], { duration: lineMs(scene, n) / st.rate, easing: 'linear', fill: 'forwards' });
+}
+
+/* ---------- 語音 ---------- */
+const audio = new Audio();
+audio.preload = 'auto';
+let voiceStop = null;
+let unlocked = false;
+function stopVoice() {
+  try { audio.pause(); } catch (e) { /* 忽略 */ }
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (voiceStop) { const f = voiceStop; voiceStop = null; f(); }
+}
+function playClip(src) {
+  return new Promise((resolve, reject) => {
+    const done = () => { if (voiceStop === done) voiceStop = null; resolve(); };
+    voiceStop = done;
+    audio.onended = done;
+    audio.onerror = () => { if (voiceStop === done) voiceStop = null; reject(new Error('audio')); };
+    audio.src = src;
+    audio.muted = st.muted;
+    audio.playbackRate = st.rate;
+    const p = audio.play();
+    if (p && p.catch) p.catch(err => { if (voiceStop === done) voiceStop = null; reject(err); });
+  });
+}
+/* 第一次點擊時解鎖音訊，避免瀏覽器擋自動播放 */
+function unlockAudio() {
+  if (unlocked) return;
+  unlocked = true;
+  const first = Object.values(AUD)[0];
+  if (!first) return;
+  try {
+    audio.muted = true;
+    audio.src = first.src;
+    const p = audio.play();
+    if (p && p.then) p.then(() => { if (!voiceStop) audio.pause(); audio.muted = st.muted; }).catch(() => {});
+  } catch (e) { /* 忽略 */ }
+}
+/* 沒有語音檔時，改用瀏覽器內建語音（優先找 YunJhe／HsiaoYu），再不行就依字數計時 */
+function pickVoice(who) {
+  const vs = speechSynthesis.getVoices().filter(v => /zh[-_]TW/i.test(v.lang));
+  const want = who === 'allan' ? /YunJhe|Zhiwei|Male/i : /HsiaoYu|HsiaoChen|Hanhan|Female/i;
+  return vs.find(v => want.test(v.name) && !(who === 'allan' && /Female/i.test(v.name))) || vs[0] || null;
+}
+function speakTTS(who, text, ms) {
+  return new Promise(resolve => {
+    const t0 = performance.now();
+    let finished = false;
+    const fin = () => { if (finished) return; finished = true; if (voiceStop === fin) voiceStop = null; resolve(); };
+    voiceStop = fin;
+    if (!window.speechSynthesis || st.muted) { setTimeout(fin, ms); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW';
+    u.rate = st.rate * (who === 'arale' ? 1.12 : 1.06);
+    u.pitch = who === 'arale' ? 1.6 : 0.9;
+    const v = pickVoice(who);
+    if (v) u.voice = v;
+    u.onend = fin;
+    u.onerror = () => setTimeout(fin, Math.max(0, ms - (performance.now() - t0)));
+    setTimeout(fin, ms + 4000);
+    speechSynthesis.speak(u);
   });
 }
 
@@ -1425,41 +1499,103 @@ function setFace(who, face, popIt) {
   if (img.getAttribute('src') !== src) img.setAttribute('src', src);
   if (popIt && !reduce) { img.classList.remove('pop'); void img.offsetWidth; img.classList.add('pop'); }
 }
-async function typeText(el, text, token) {
-  if (reduce) { el.textContent = text; return; }
-  for (let n = 1; n <= text.length; n++) {
-    if (token !== st.token) return;
-    el.textContent = text.slice(0, n);
-    await sleep(TYPE_MS);
-  }
+function markSpeaker(H, host) {
+  H.list.forEach(h => {
+    const me = h === host;
+    h.classList.toggle('is-speaking', me);
+    h.classList.toggle('is-quiet', !me && h.classList.contains('has-line'));
+  });
+  host.classList.add('has-line');
 }
-async function runDialogue(scene, token) {
-  const lines = SCRIPT[scene.id] || [];
+/* 顯示第 n 句之前，每位角色最後說的那句 */
+function fillBefore(scene, n) {
   const H = hostsFor(scene);
+  const lines = linesOf(scene);
   clearHosts();
   if (!H.hero) {
     const first = w => (lines.find(l => l[0] === w) || [])[1];
     setFace('allan', first('allan') || 'smile', false);
     setFace('arale', first('arale') || 'laugh', false);
   }
-  await sleep(reduce ? 150 : 900);
-  for (const [who, face, text] of lines) {
+  const last = {};
+  for (let j = 0; j < n && j < lines.length; j++) last[lines[j][0]] = j;
+  Object.keys(last).forEach(who => {
+    const h = H.get(who);
+    if (!h) return;
+    const [, face, text] = lines[last[who]];
+    h.classList.add('has-line', 'is-quiet');
+    $('.bubble-text', h).textContent = text;
+    if (!H.hero) setFace(who, face, false);
+  });
+  return H;
+}
+/* 暫停時：只顯示第 n 句文字，不出聲 */
+function showStatic(scene, n) {
+  const lines = linesOf(scene);
+  if (!lines.length) return;
+  n = Math.max(0, Math.min(lines.length - 1, n));
+  const H = fillBefore(scene, n);
+  const [who, face, text] = lines[n];
+  const host = H.get(who);
+  if (!host) return;
+  markSpeaker(H, host);
+  host.classList.remove('is-speaking');
+  $('.bubble-text', host).textContent = text;
+  if (!H.hero) setFace(who, face, false);
+  st.line = n;
+  progressLine(scene, n, true);
+  lineHook(scene, n);
+}
+async function typeOver(el, text, ms, token) {
+  if (reduce) { el.textContent = text; return; }
+  const step = Math.max(16, Math.min(90, ms / Math.max(1, text.length)));
+  for (let n = 1; n <= text.length; n++) {
     if (token !== st.token) return;
-    const host = H.get(who);
-    if (!host) continue;
-    H.list.forEach(h => {
-      const me = h === host;
-      h.classList.toggle('is-speaking', me);
-      h.classList.toggle('is-quiet', !me && h.classList.contains('has-line'));
-    });
-    host.classList.add('has-line');
-    if (!H.hero) setFace(who, face, true);
-    srLine.textContent = NAMES[who] + '：' + text;
-    await typeText($('.bubble-text', host), text, token);
-    if (token !== st.token) return;
-    await sleep(holdMs(text));
+    el.textContent = text.slice(0, n);
+    await sleep(step);
   }
-  if (token === st.token) H.list.forEach(h => h.classList.remove('is-speaking'));
+}
+function lineHook(scene, n) {
+  const d = DEMOS[scene.id];
+  if (d && d.onLine) d.onLine(n);
+}
+async function speakLine(scene, n, token) {
+  const [who, face, text] = linesOf(scene)[n];
+  const H = hostsFor(scene);
+  const host = H.get(who);
+  if (!host) return;
+  st.line = n;
+  markSpeaker(H, host);
+  if (!H.hero) setFace(who, face, true);
+  srLine.textContent = NAMES[who] + '：' + text;
+  progressLine(scene, n);
+  lineHook(scene, n);
+  const clip = AUD[clipId(scene, n)];
+  const ms = lineMs(scene, n) / st.rate;
+  const typing = typeOver($('.bubble-text', host), text, ms * 0.82, token);
+  const voice = clip
+    ? playClip(clip.src).catch(() => (token === st.token ? speakTTS(who, text, ms) : null))
+    : speakTTS(who, text, ms);
+  await Promise.all([typing, voice]);
+}
+async function runDialogue(scene, token, from) {
+  const lines = linesOf(scene);
+  fillBefore(scene, from);
+  await sleep(from === 0 ? (reduce ? 150 : 800) : 250);
+  for (let n = from; n < lines.length; n++) {
+    if (token !== st.token) return;
+    await speakLine(scene, n, token);
+    if (token !== st.token) return;
+    await sleep(GAP_LINE / st.rate);
+  }
+  if (token !== st.token) return;
+  st.line = lines.length;
+  hostsFor(scene).list.forEach(h => h.classList.remove('is-speaking'));
+  const left = (MIN_MS[scene.id] || 0) - (performance.now() - st.t0);
+  await sleep(Math.max(GAP_SCENE, left));
+  if (token !== st.token || !st.playing) return;
+  if (st.i < scenes.length - 1) go(st.i + 1, 0);
+  else setPlaying(false);
 }
 
 /* ---------- 場景示範動畫 ---------- */
@@ -1532,7 +1668,7 @@ function stopAmbient() { ambient.forEach(t => clearInterval(t)); ambient = []; }
   });
   steps.forEach(el => {
     el.tabIndex = 0;
-    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); el.click(); } });
   });
   DEMOS.cycle = {
     start() { set(0); if (!reduce) loop(); },
@@ -1542,23 +1678,26 @@ function stopAmbient() { ambient.forEach(t => clearInterval(t)); ambient = []; }
   };
 })();
 
-/* 風險排序：先依 CVSS，再依 AI 加入脈絡後重排 */
+/* 風險排序：先依 CVSS，Allan 說「加上脈絡」時由 AI 重排 */
 (() => {
   const scene = $('#priority');
   const ol = $('.finds', scene);
   const mode = $('#sorterMode');
   let timers = [];
+  let sorted = false;
   const clear = () => { timers.forEach(clearTimeout); timers = []; };
   function order(key) {
     $$('.find', ol).sort((a, b) => a.dataset[key] - b.dataset[key]).forEach(li => ol.appendChild(li));
     $$('.find', ol).forEach((li, n) => { $('.f-rank', li).textContent = n + 1; });
   }
   function reset() {
+    sorted = false;
     scene.classList.remove('ai-on', 'ai-done');
     order('cvssRank');
     mode.innerHTML = '只看 CVSS 分數的排序<small>分數最高的就先修？</small>';
   }
   function sortAI(instant) {
+    sorted = true;
     const items = $$('.find', ol);
     const first = new Map(items.map(li => [li, li.getBoundingClientRect().top]));
     order('aiRank');
@@ -1577,8 +1716,12 @@ function stopAmbient() { ambient.forEach(t => clearInterval(t)); ambient = []; }
     timers.push(setTimeout(() => sortAI(false), sortAt));
   }
   DEMOS.priority = {
-    start() { play(5200, 6300); },
+    start() { clear(); reset(); if (!st.playing) play(2400, 3400); },
     stop: clear,
+    onLine(n) {
+      if (n >= 1 && !sorted) { clear(); scene.classList.add('ai-on'); timers.push(setTimeout(() => sortAI(false), 1100)); }
+      if (n === 0 && sorted) { clear(); reset(); }
+    },
     final() { clear(); scene.classList.remove('ai-on'); order('cvssRank'); sortAI(true); },
     replay() { play(900, 1900); }
   };
@@ -1714,44 +1857,78 @@ function sweep() {
   void el.offsetWidth;
   el.classList.add('run');
 }
-function startTimer(token) {
-  if (st.anim) { st.anim.cancel(); st.anim = null; }
-  const fill = $('.seg-fill', segs[st.i]);
-  if (!fill.animate) return;
-  st.anim = fill.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: sceneMs(scenes[st.i].id), easing: 'linear', fill: 'forwards' });
-  if (!st.playing) st.anim.pause();
-  st.anim.onfinish = () => {
-    if (token !== st.token || !st.playing) return;
-    if (st.i < scenes.length - 1) go(st.i + 1); else setPlaying(false);
-  };
-}
 function setPlaying(p) {
   st.playing = p;
   $('use', toggleBtn).setAttribute('href', p ? '#i-pause' : '#i-play');
-  toggleBtn.setAttribute('aria-label', p ? '暫停自動播放' : '自動播放');
-  if (!st.anim) return;
-  if (p) { if (st.anim.playState === 'finished') go(st.i + 1); else st.anim.play(); }
-  else st.anim.pause();
+  toggleBtn.setAttribute('aria-label', p ? '暫停（空白鍵）' : '播放（空白鍵）');
+  toggleBtn.title = p ? '暫停（空白鍵）' : '播放（空白鍵）';
+  if (st.mode !== 'play') return;
+  st.token++;
+  const token = st.token;
+  const scene = scenes[st.i];
+  const n = linesOf(scene).length;
+  if (p) {
+    if (n && st.line >= n) { if (st.i < scenes.length - 1) go(st.i + 1, 0); else go(0, 0); }
+    else runDialogue(scene, token, Math.max(0, st.line));
+  } else {
+    stopVoice();
+    if (st.line >= 0 && st.line < n) showStatic(scene, st.line);
+    else $$('.host, .hero-host').forEach(h => h.classList.remove('is-speaking'));
+  }
 }
-function go(n) {
+function go(n, from, opts) {
   n = Math.max(0, Math.min(scenes.length - 1, n));
   const prev = scenes[st.i];
   const next = scenes[n];
   st.token++;
   const token = st.token;
+  stopVoice();
   stopDemo();
   if (prev === next) { next.classList.remove('is-active'); void next.offsetWidth; }
   scenes.forEach(s => s.classList.toggle('is-active', s === next));
   st.i = n;
+  st.line = -1;
+  st.t0 = performance.now();
   canvas.dataset.hero = next.classList.contains('scene--hero') ? '1' : '0';
   updateChrome();
+  clearHosts();
   try { history.replaceState(null, '', '#' + next.id); } catch (e) { /* 部分內嵌環境不允許 */ }
   if (st.mode !== 'play') return;
   $('.scene-inner', next).scrollTop = 0;
   sweep();
   startDemo(next, token);
-  runDialogue(next, token);
-  startTimer(token);
+  if (st.playing) runDialogue(next, token, from || 0);
+  else if (!(opts && opts.quiet)) showStatic(next, from || 0);
+}
+function jumpLine(L) {
+  st.token++;
+  const token = st.token;
+  stopVoice();
+  const scene = scenes[st.i];
+  if (st.playing) runDialogue(scene, token, L); else showStatic(scene, L);
+}
+function nextLine() {
+  const n = linesOf(scenes[st.i]).length;
+  const target = st.line + 1;
+  if (target < n) jumpLine(target);
+  else if (st.i < scenes.length - 1) go(st.i + 1, 0);
+}
+function prevLine() {
+  const n = linesOf(scenes[st.i]).length;
+  const target = Math.min(st.line, n) - 1;
+  if (target >= 0) jumpLine(target);
+  else if (st.i > 0) go(st.i - 1, Math.max(0, linesOf(scenes[st.i - 1]).length - 1));
+  else jumpLine(0);
+}
+function prevScene() { if (st.line > 0) go(st.i, 0); else go(st.i - 1, 0); }
+function nextScene() { go(st.i + 1, 0); }
+function setMuted(m) {
+  st.muted = m;
+  audio.muted = m;
+  if (m && window.speechSynthesis) speechSynthesis.cancel();
+  $('use', muteBtn).setAttribute('href', m ? '#i-mute' : '#i-vol');
+  muteBtn.setAttribute('aria-pressed', m ? 'true' : 'false');
+  muteBtn.title = m ? '開啟聲音（M）' : '靜音（M）';
 }
 function fit() {
   if (st.mode !== 'play') return;
@@ -1773,8 +1950,9 @@ function setMode(m, initial) {
   $('use', modeBtn).setAttribute('href', m === 'play' ? '#i-read' : '#i-film');
   if (m === 'read') {
     st.token++;
+    st.playing = false;
     setPlaying(false);
-    if (st.anim) { st.anim.cancel(); st.anim = null; }
+    stopVoice();
     stopDemo();
     clearHosts();
     scenes.forEach(s => s.classList.remove('is-active'));
@@ -1786,7 +1964,7 @@ function setMode(m, initial) {
     stopAmbient();
     window.scrollTo(0, 0);
     fit();
-    go(st.i);
+    go(st.i, 0, { quiet: true });
   }
 }
 function toggleFull() {
@@ -1799,31 +1977,64 @@ function toggleFull() {
 }
 
 document.addEventListener('click', e => {
+  const tp = e.target.closest('.t-play');
+  if (tp) {
+    unlockAudio();
+    stopVoice();
+    const c = AUD[tp.dataset.clip];
+    if (c) playClip(c.src).catch(() => {});
+    return;
+  }
   const b = e.target.closest('[data-act],[data-demo]');
   if (!b) return;
   if (b.dataset.demo) { const d = DEMOS[b.dataset.demo]; if (d && d.replay) d.replay(); return; }
   const act = b.dataset.act;
+  unlockAudio();
   if (act === 'start' || act === 'replay') {
-    const target = act === 'start' ? 1 : 0;
-    if (st.mode !== 'play') { st.i = target; setMode('play'); } else go(target);
+    st.i = 0;
+    st.playing = false;
+    if (st.mode !== 'play') setMode('play'); else go(0, 0, { quiet: true });
     setPlaying(true);
-  } else if (act === 'prev') go(st.i - 1);
-  else if (act === 'next') go(st.i + 1);
-  else if (act === 'toggle') setPlaying(!st.playing);
+  } else if (act === 'toggle') setPlaying(!st.playing);
+  else if (act === 'prev-line') prevLine();
+  else if (act === 'next-line') nextLine();
+  else if (act === 'prev-scene') prevScene();
+  else if (act === 'next-scene') nextScene();
+  else if (act === 'mute') setMuted(!st.muted);
   else if (act === 'mode') setMode(st.mode === 'play' ? 'read' : 'play');
   else if (act === 'full') toggleFull();
 });
+selScenes.forEach(sel => sel.addEventListener('change', () => {
+  const k = +sel.value;
+  if (st.mode === 'play') go(k, 0);
+  else { st.i = k; updateChrome(); scenes[k].scrollIntoView({ block: 'start' }); }
+  sel.blur();
+}));
+selRate.addEventListener('change', () => {
+  st.rate = +selRate.value || 1;
+  audio.playbackRate = st.rate;
+  selRate.blur();
+});
 document.addEventListener('keydown', e => {
   if (st.mode !== 'play' || e.altKey || e.ctrlKey || e.metaKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
   const onCtl = e.target.closest && e.target.closest('button,a,[tabindex]');
-  switch (e.key) {
-    case 'ArrowRight': case 'PageDown': e.preventDefault(); go(st.i + 1); break;
-    case 'ArrowLeft': case 'PageUp': e.preventDefault(); go(st.i - 1); break;
-    case ' ': if (onCtl) return; e.preventDefault(); setPlaying(!st.playing); break;
-    case 'Home': e.preventDefault(); go(0); break;
-    case 'End': e.preventDefault(); go(scenes.length - 1); break;
-    case 'f': case 'F': toggleFull(); break;
+  const keys = {
+    ArrowRight: nextLine, ArrowLeft: prevLine,
+    PageDown: nextScene, PageUp: prevScene,
+    Home: () => go(0, 0), End: () => go(scenes.length - 1, 0),
+    f: toggleFull, F: toggleFull, m: () => setMuted(!st.muted), M: () => setMuted(!st.muted)
+  };
+  if (e.key === ' ') {
+    if (onCtl) return;
+    e.preventDefault();
+    unlockAudio();
+    setPlaying(!st.playing);
+    return;
   }
+  const fn = keys[e.key];
+  if (fn) { e.preventDefault(); unlockAudio(); fn(); }
 });
 let scrollRaf = 0;
 window.addEventListener('scroll', () => {
@@ -1836,6 +2047,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 if (window.ResizeObserver) new ResizeObserver(fit).observe(viewport);
 else window.addEventListener('resize', fit);
+if (window.speechSynthesis && speechSynthesis.getVoices) speechSynthesis.getVoices();
 
 /* ---------- 背景：情資網路 ---------- */
 (() => {

@@ -1,13 +1,17 @@
-"""把 src/template.html 與 src/sprites/*.webp 組成單一 HTML 檔。
+"""把 src/template.html、src/script.js、src/sprites/*.webp 與 src/audio/*.mp3 組成單一 HTML 檔。
 
 用法：
   python3 tools/build.py                 產生 index.html（完整文件，可直接用瀏覽器開啟或離線播放）
   python3 tools/build.py --fragment OUT  另外輸出不含 <html>/<head>/<body> 外殼的版本（供 Artifact 發布）
+需要 Node.js（讀取 src/script.js）。
 """
 import argparse
 import base64
+import json
 import re
 from pathlib import Path
+
+from cti_script import AUDIO, SCRIPT, line_key, load_lines, load_manifest
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "src" / "template.html"
@@ -29,22 +33,40 @@ SHELL = """<!doctype html>
 """
 
 
+def data_uri(path: Path, mime: str) -> str:
+    return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode("ascii")
+
+
 def inline_sprites(text: str) -> str:
     cache = {}
 
     def repl(m):
         name = m.group(1)
         if name not in cache:
-            data = (SPRITES / f"{name}.webp").read_bytes()
-            cache[name] = "data:image/webp;base64," + base64.b64encode(data).decode("ascii")
+            cache[name] = data_uri(SPRITES / f"{name}.webp", "image/webp")
         return cache[name]
 
     out = re.sub(r"\{\{sprite:([a-z0-9-]+)\}\}", repl, text)
-    left = re.findall(r"\{\{[^}]*\}\}", out)
-    if left:
-        raise SystemExit(f"未替換的佔位符：{left[:5]}")
-    print(f"內嵌精靈圖 {len(cache)} 張：{', '.join(sorted(cache))}")
+    print(f"內嵌精靈圖 {len(cache)} 張")
     return out
+
+
+def audio_js() -> str:
+    """只內嵌台詞與語音一致的句子；其餘在播放時改用瀏覽器語音。"""
+    manifest = load_manifest()
+    clips, missing = {}, []
+    for ln in load_lines():
+        m = manifest.get(ln["id"])
+        mp3 = AUDIO / f'{ln["id"]}.mp3'
+        if m and m.get("key") == line_key(ln) and mp3.exists():
+            clips[ln["id"]] = {"dur": m["dur"], "src": data_uri(mp3, "audio/mpeg")}
+        else:
+            missing.append(ln["id"])
+    total = sum(c["dur"] for c in clips.values())
+    print(f"內嵌語音 {len(clips)} 句，共 {total / 60:.1f} 分鐘")
+    if missing:
+        print(f"注意：{len(missing)} 句沒有對應語音，請執行 python3 tools/gen_audio.py：{', '.join(missing)}")
+    return "window.CTI_AUDIO = " + json.dumps(clips, ensure_ascii=False, separators=(",", ":")) + ";"
 
 
 def main() -> None:
@@ -56,6 +78,11 @@ def main() -> None:
     if HEAD_MARK not in tpl:
         raise SystemExit(f"範本缺少 {HEAD_MARK} 分隔標記")
     full = inline_sprites(tpl)
+    left = re.findall(r"\{\{(?!SCRIPT_JS|AUDIO_JS)[^}]*\}\}", full)
+    if left:
+        raise SystemExit(f"未替換的佔位符：{left[:5]}")
+    full = full.replace("/*{{SCRIPT_JS}}*/", SCRIPT.read_text(encoding="utf-8").strip())
+    full = full.replace("/*{{AUDIO_JS}}*/", audio_js())
     head, body = full.split(HEAD_MARK, 1)
 
     out = ROOT / "index.html"

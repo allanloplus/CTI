@@ -1,20 +1,34 @@
 # CTI 情資作業全景
 
-內外部情資蒐集 × 脆弱性識別的動畫簡報網頁，由 Allan 顧問與 AI 助理阿拉蕾串場，供 ISMS 輔導客戶說明使用。
+內外部情資蒐集 × 脆弱性識別的動畫簡報網頁，由 Allan 顧問與 AI 助理阿拉蕾配音串場，供 ISMS 輔導客戶說明使用。
 
 製作：Allan顧問，2027/10/17
 
 ## 觀看方式
 
-直接用瀏覽器開啟 `index.html`。檔案已內嵌所有角色圖片，可寄送或離線播放；離線時字型會改用系統字型。
+直接用瀏覽器開啟 `index.html`，按「開始播放」。角色圖片與 32 句配音都已內嵌，可寄送或離線播放；離線時字型會改用系統字型。
 
 | 操作 | 方式 |
 |---|---|
-| 自動播放／暫停 | 底部播放鍵，或空白鍵 |
-| 上一段／下一段 | ← → 方向鍵，或底部按鈕 |
-| 跳到指定段落 | 點底部進度條 |
-| 全螢幕 | 右上角按鈕，或 F 鍵 |
-| 閱讀模式 | 右上角按鈕；手機會自動進入，所有內容與串場對話一次展開 |
+| 播放／暫停 | 空白鍵，或控制列中間的播放鍵；暫停時語音停止，繼續時從同一句重播 |
+| 上一句／下一句 | ← → 方向鍵，或播放鍵兩側的箭頭 |
+| 上一段／下一段 | PgUp／PgDn，或控制列最外側的按鈕 |
+| 切換主題 | 控制列的主題選單，或點進度條 |
+| 語速 | 控制列的 1.0x／1.15x／1.3x |
+| 靜音 | M 鍵，或控制列右側的喇叭鈕 |
+| 全螢幕 | F 鍵，或右上角按鈕 |
+| 閱讀模式 | 右上角按鈕；手機會自動進入，所有內容與串場對話一次展開，每句台詞旁可單獨播放語音 |
+
+## 配音
+
+沿用教學動畫慣用的兩個聲音，以 edge-tts 預先產生每句 MP3：
+
+| 角色 | 聲音 | 參數 |
+|---|---|---|
+| Allan 顧問 | `zh-TW-YunJheNeural`（台灣男聲） | 語速 +6% |
+| AI 助理阿拉蕾 | `zh-TW-HsiaoYuNeural`（台灣女聲） | 語速 +12%、音調 +30Hz |
+
+若某句台詞改過但還沒重新產生語音，播放時會改用瀏覽器內建的中文語音（優先找 YunJhe／HsiaoYu），建置時也會列出缺語音的句子。
 
 ## 內容架構（13 段）
 
@@ -39,19 +53,25 @@
 ## 修改與重新建置
 
 ```
-src/template.html        頁面原始碼（樣式、結構、串場台詞與動畫）
+src/script.js            串場台詞（每句：說話者、表情、台詞）
+src/audio/               每句配音 MP3 與 manifest.json（由 gen_audio.py 產生）
+src/template.html        頁面原始碼（樣式、結構、播放器與動畫）
 src/sprites/*.webp       角色姿勢與表情圖
 src/source/*.jpg         角色設定原圖
+tools/gen_audio.py       依台詞產生配音
+tools/build.py           把台詞、配音與圖片內嵌進範本，輸出 index.html
 tools/crop_sprites.py    從設定原圖裁切並去背，輸出 src/sprites
-tools/build.py           把精靈圖內嵌進範本，輸出 index.html
 ```
 
-修改 `src/template.html` 後執行：
+需要 Python 3、Node.js、ffmpeg（ffprobe），以及 `pip install edge-tts`。
 
 ```
-python3 tools/build.py
+python3 tools/gen_audio.py     # 只重新產生台詞有變動的句子（--all 全部重產）
+python3 tools/build.py         # 重新組成 index.html
 ```
 
-- **改台詞**：編輯範本裡的 `SCRIPT` 物件，每行格式為 `[說話者, 表情, 台詞]`。
-- **改署名或日期**：範本中「製作：Allan顧問，2027/10/17」共出現三處。
+- **改台詞或表情**：編輯 `src/script.js`，再依序執行上面兩個指令。可用表情列在檔案開頭的註解。
+- **改唸法**：`tools/gen_audio.py` 的 `SAY` 清單只影響語音，例如把「A.5.7」唸成「A 五點七」。
+- **改署名或日期**：`src/template.html` 中「製作：Allan顧問，2027/10/17」共出現三處。
 - **重新裁切角色圖**：調整 `tools/crop_sprites.py` 的裁切框後執行 `python3 tools/crop_sprites.py`，需要 Pillow 與 numpy。
+- **網路連線**：產生配音時 edge-tts 會連到 `speech.platform.bing.com`（WebSocket，443 埠）；在有網域白名單的環境要先放行。
