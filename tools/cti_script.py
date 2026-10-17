@@ -3,6 +3,7 @@
 兩個專案：
   show  動畫簡報   src/template.html + src/script.js       → index.html
   game  闖關遊戲   game/src/template.html + game/src/voice.js → game/index.html
+  dash  戰情儀表板 dashboard/src/template.html + dashboard/src/voice.js → dashboard/index.html
 """
 import json
 import subprocess
@@ -21,6 +22,12 @@ TARGETS = {
         "script": ROOT / "game" / "src" / "voice.js",
         "audio": ROOT / "game" / "src" / "audio",
         "out": ROOT / "game" / "index.html",
+    },
+    "dash": {
+        "template": ROOT / "dashboard" / "src" / "template.html",
+        "script": ROOT / "dashboard" / "src" / "voice.js",
+        "audio": ROOT / "dashboard" / "src" / "audio",
+        "out": ROOT / "dashboard" / "index.html",
     },
 }
 

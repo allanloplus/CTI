@@ -71,7 +71,7 @@ def audio_js(t) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--target", default="show", help="show（動畫簡報）或 game（闖關遊戲）")
+    ap.add_argument("--target", default="show", help="show（動畫簡報）、game（闖關遊戲）或 dash（戰情儀表板）")
     ap.add_argument("--fragment", type=Path, help="另存不含外殼的版本")
     args = ap.parse_args()
     t = target(args.target)

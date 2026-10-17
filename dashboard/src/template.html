@@ -1,0 +1,1613 @@
+<title>CTI 戰情室</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="以示範資料呈現內部情資、外部情資、脆弱性與處置成效的戰情儀表板，由 Allan 顧問與 AI 助理阿拉蕾語音導覽各區塊的意涵與建議行動">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  /* Layout: sticky command bar + one filter row, then a 12-column board of five zones (overview, internal, external, vulnerability, response); a briefing drawer docks at the bottom during the guided tour */
+  color-scheme: dark;
+  --void:#050d16;
+  --void-glass:rgba(5,13,22,.9);
+  --scrim:rgba(3,8,14,.8);
+  --deck:#0a1826;
+  --deck-hi:#0f2335;
+  --rule:#1c3549;
+  --hair:#132a3e;
+  --axis:#24425e;
+  --grid:rgba(56,211,223,.045);
+  --scan:rgba(56,211,223,.07);
+  --shadow:rgba(0,0,0,.55);
+  --text:#e4eef5;
+  --dim:#9bb0c0;
+  --muted:#6f879a;
+  /* 區域識別色（沿用系列配色） */
+  --int:#38d3df;
+  --ext:#ffc23d;
+  --vul:#ff5b6b;
+  --ok:#5be39a;
+  --paper:#e9f0f6;
+  --paper-ink:#0b1b2a;
+  /* 圖表分類色：五類內部告警來源（依固定順序，已於 #0a1826 驗證色盲分辨） */
+  --s1:#3987e5;
+  --s2:#d95926;
+  --s3:#199e70;
+  --s4:#c98500;
+  --s5:#d55181;
+  /* 狀態色：保留給嚴重度，一律搭配文字或圖示 */
+  --good:#5be39a;
+  --warn:#ffc23d;
+  --serious:#ff8f5a;
+  --crit:#ff5b6b;
+  --f-ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-label:"Chakra Petch","Noto Sans TC",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace;
+  --f-allan:"LXGW WenKai TC","Noto Sans TC",serif;
+  --f-arale:"Huninn","Noto Sans TC",sans-serif;
+  --top-h:112px;
+  --drawer-h:0px;
+  --zc:var(--int);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--void);color:var(--text);font-family:var(--f-ui);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;padding-bottom:var(--drawer-h);transition:padding-bottom .3s}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--void)}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3,h4,p,figure{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--int);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg{flex:none}
+.veil{position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/48px 48px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- 指揮列 ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--void-glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule)}
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:9px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{width:30px;height:30px;color:var(--int)}
+.brand h1{font-size:18px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
+.brand small{display:block;font:600 10.5px var(--f-label);letter-spacing:.2em;color:var(--muted)}
+.live{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--rule);background:var(--deck);font:600 12.5px var(--f-label);color:var(--dim);font-variant-numeric:tabular-nums}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--crit);box-shadow:0 0 0 0 var(--crit);animation:livepulse 1.6s ease-out infinite}
+.bar-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:9px;border:1px solid var(--rule);background:var(--deck);font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:border-color .2s,background .2s}
+.btn:hover{border-color:var(--int)}
+.btn svg{width:17px;height:17px}
+.btn.primary{border-color:transparent;background:var(--int);color:var(--paper-ink)}
+.btn.drill{border-color:color-mix(in srgb,var(--crit) 55%,var(--rule));color:var(--crit)}
+.btn.drill:hover{background:color-mix(in srgb,var(--crit) 12%,var(--deck))}
+.btn[aria-pressed="false"]{opacity:.55}
+.filters{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:0 9px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.seg{display:inline-flex;padding:3px;border-radius:10px;border:1px solid var(--rule);background:var(--deck)}
+.seg button{height:30px;padding:0 12px;border:0;border-radius:7px;background:none;font-size:13px;font-weight:700;color:var(--dim);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--deck-hi);color:var(--text);box-shadow:inset 0 0 0 1px var(--axis)}
+.fnote{font-size:12.5px;color:var(--muted)}
+.fnote b{color:var(--dim);font-weight:700}
+.credit-top{margin-left:auto;font-size:12px;color:var(--muted)}
+@media (max-width:760px){.brand small,.credit-top,.btn .lbl{display:none}.bar-actions{margin-left:0}}
+
+/* ---------- 儀表板 ---------- */
+.board{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;max-width:1500px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.zone{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.zone-head{grid-column:1/-1;display:flex;align-items:center;gap:10px;scroll-margin-top:calc(var(--top-h) + 12px)}
+.zone-head svg{width:22px;height:22px;color:var(--zc)}
+.zone-head h2{font-size:16px;font-weight:900;letter-spacing:.04em}
+.zone-head span{font:600 11px var(--f-label);letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.zone-head::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--zc) 50%,transparent),transparent)}
+.z-int{--zc:var(--int)}.z-ext{--zc:var(--ext)}.z-vul{--zc:var(--vul)}.z-ok{--zc:var(--ok)}
+.card{position:relative;display:flex;flex-direction:column;gap:10px;min-width:0;padding:14px 16px 16px;border-radius:14px;background:var(--deck);border:1px solid var(--rule);scroll-margin-top:calc(var(--top-h) + 14px);transition:opacity .4s,filter .4s,box-shadow .4s,border-color .4s}
+.card::before{content:"";position:absolute;left:16px;right:16px;top:-1px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--zc),transparent 70%);opacity:.8}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+@media (max-width:1180px){.zone{grid-template-columns:repeat(2,minmax(0,1fr))}.zone .card{grid-column:span 1}.zone .card.wide,.zone .s12{grid-column:span 2}}
+@media (max-width:720px){.zone{grid-template-columns:minmax(0,1fr)}.zone .card,.zone .card.wide,.zone .s12{grid-column:span 1}}
+.card-head{display:flex;align-items:flex-start;gap:10px}
+.card-head > div:first-child{flex:1;min-width:0}
+.card-head h3{font-size:15px;font-weight:900;line-height:1.35}
+.card-sub{font-size:12.5px;color:var(--muted)}
+.card-tools{display:flex;gap:6px;flex:none}
+.mini{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px;border-radius:7px;border:1px solid var(--rule);background:var(--deck-hi);font-size:12px;font-weight:700;color:var(--dim);cursor:pointer}
+.mini:hover{border-color:var(--zc);color:var(--text)}
+.mini svg{width:14px;height:14px}
+.mini[aria-pressed="true"]{border-color:var(--zc);color:var(--text)}
+.explain{border-color:color-mix(in srgb,var(--zc) 50%,var(--rule));color:var(--text)}
+.chart{position:relative;min-height:40px}
+.chart svg{display:block;width:100%;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:10px;border-radius:2px;background:var(--c)}
+.legend svg{width:14px;height:14px}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--hair);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl th{color:var(--muted);font-weight:700}
+.axis-t{fill:var(--muted);font-size:11px;font-family:var(--f-ui);font-variant-numeric:tabular-nums}
+.gridl{stroke:var(--hair);stroke-width:1}
+.basel{stroke:var(--axis);stroke-width:1}
+.anno{fill:var(--text);font-size:11.5px;font-weight:700;font-family:var(--f-ui)}
+.anno-l{stroke:var(--dim);stroke-width:1}
+
+/* 導覽聚焦 */
+body.touring .card:not(.spot),body.touring .ticker:not(.spot),body.touring .zone-head{opacity:.3;filter:saturate(.4)}
+.card.spot,.ticker.spot{border-color:var(--zc);box-shadow:0 0 0 1px var(--zc),0 0 46px -10px var(--zc);z-index:2}
+
+/* ---------- 整體態勢 ---------- */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.gauge svg{width:min(260px,100%)}
+.g-track{fill:none;stroke:var(--hair);stroke-width:18;stroke-linecap:round}
+.g-val{fill:none;stroke-width:18;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1),stroke .6s}
+.g-tick{stroke:var(--axis);stroke-width:2}
+.g-num{fill:var(--text);font:900 50px var(--f-ui)}
+.g-of{fill:var(--muted);font:600 12px var(--f-ui)}
+.level{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 13px;border-radius:999px;font-weight:900;font-size:14px;color:var(--paper-ink);background:var(--lc)}
+.level svg{width:16px;height:16px}
+.factors{display:grid;gap:6px;width:100%}
+.factor{display:grid;grid-template-columns:minmax(0,1fr) 46px 34px;gap:8px;align-items:center;font-size:12.5px;color:var(--dim)}
+.factor .ft{height:6px;border-radius:3px;background:var(--hair);overflow:hidden}
+.factor .ft i{display:block;height:100%;border-radius:3px;background:var(--dim);transition:width .8s}
+.factor b{color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.factor.hot b{color:var(--crit)}
+.factor.hot .ft i{background:var(--crit)}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;background:none;border:0}
+.tiles::before{display:none}
+.tile{display:flex;flex-direction:column;gap:4px;min-width:0;padding:12px 14px;border-radius:12px;background:var(--deck);border:1px solid var(--rule);transition:border-color .4s,box-shadow .4s}
+.tile .t-label{font-size:12.5px;color:var(--dim)}
+.tile .t-val{font-size:30px;font-weight:900;line-height:1.15}
+.tile .t-val small{font-size:13px;font-weight:700;color:var(--dim);margin-left:4px}
+.tile .t-delta{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700}
+.tile .t-delta svg{width:12px;height:12px}
+.d-bad{color:var(--crit)}.d-good{color:var(--good)}.d-flat{color:var(--muted)}
+.t-delta span{color:var(--muted);font-weight:500}
+.spark{height:34px;margin-top:2px}
+.spark svg{width:100%;height:34px;display:block}
+.flash{animation:flash 1.4s ease-out 2}
+.brief{display:flex;flex-direction:column;gap:10px}
+.brief-who{display:flex;align-items:center;gap:10px}
+.brief-who .av{position:relative;width:44px;height:44px;flex:none;overflow:hidden;border-radius:50%;border:2px solid var(--int);box-shadow:0 0 12px -2px var(--int)}
+.brief-who .av img{width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+.brief-who b{display:block;font-size:14px}
+.brief-who small{font-size:12px;color:var(--muted)}
+.brief-text{font-family:var(--f-arale);font-size:14px;line-height:1.75;min-height:150px;white-space:pre-line}
+.brief-text .caret{display:inline-block;width:7px;height:1em;margin-left:2px;vertical-align:-2px;background:var(--int);animation:blink 1s steps(2) infinite}
+.ai-note{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);padding-top:8px;border-top:1px dashed var(--rule)}
+.ai-note svg{width:14px;height:14px;color:var(--warn)}
+
+/* ---------- 內部情資 ---------- */
+.rank{display:grid;gap:2px}
+.rank-row{display:grid;grid-template-columns:minmax(0,1fr) 54px 58px;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--hair);cursor:default}
+.rank-row:hover{background:var(--deck-hi)}
+.rank-row b{display:block;font-size:13px}
+.rank-row small{display:block;font-size:11.5px;color:var(--muted)}
+.rank-row .rb{height:5px;margin-top:4px;border-radius:3px;background:var(--hair)}
+.rank-row .rb i{display:block;height:100%;border-radius:3px;background:var(--int);opacity:.85}
+.rank-row .rc{text-align:right;font-weight:900;font-size:14px;font-variant-numeric:tabular-nums}
+.rank-row .rt{text-align:right;font-size:12px;font-weight:700}
+.chipst{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid var(--sc);color:var(--sc);white-space:nowrap}
+.chipst svg{width:11px;height:11px}
+.ticker{grid-column:1/-1;position:relative;display:flex;align-items:center;height:36px;padding-left:120px;overflow:hidden;border-radius:10px;border:1px solid var(--rule);background:var(--deck);transition:opacity .4s,filter .4s,box-shadow .4s}
+.ticker-tag{position:absolute;left:0;top:0;bottom:0;z-index:1;display:flex;align-items:center;gap:7px;padding:0 12px;background:var(--deck-hi);border-right:1px solid var(--rule);font:700 11px var(--f-label);letter-spacing:.12em;color:var(--crit)}
+.ticker-tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--crit);animation:blink 1s steps(2) infinite}
+.ticker-track{display:flex;gap:44px;padding-right:44px;white-space:nowrap;font:500 12.5px var(--f-mono);color:var(--dim);animation:marquee 46s linear infinite}
+.ticker-track b{color:var(--int);font-weight:600;margin-right:8px}
+.ticker-track i{font-style:normal;color:var(--warn)}
+.ticker-track .alarm{color:var(--crit)}
+
+/* ---------- 外部情資 ---------- */
+.hbars{display:grid;gap:9px}
+.hb{display:grid;grid-template-columns:96px minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:12.5px}
+.hb .hl{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb .ht{height:16px}
+.hb .ht i{display:block;height:100%;border-radius:0 4px 4px 0;background:var(--bc,var(--ext));transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.hb .hv{text-align:right;font-weight:900;font-variant-numeric:tabular-nums}
+.hb:hover .ht i{filter:brightness(1.18)}
+.funnel .hb{grid-template-columns:96px minmax(0,1fr) 92px}
+.funnel .hv small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.feed{display:grid;gap:8px;max-height:360px;overflow-y:auto;padding-right:4px;scrollbar-width:thin}
+.fi{display:grid;gap:4px;padding:9px 11px;border-radius:10px;background:var(--deck-hi);border:1px solid var(--hair);transition:border-color .4s,box-shadow .4s}
+.fi .fi-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.fi .src{font:700 11px var(--f-label);letter-spacing:.06em;color:var(--dim);padding:1px 6px;border-radius:4px;border:1px solid var(--rule)}
+.fi b{font-size:13.5px;line-height:1.45}
+.fi .fi-tags{display:flex;gap:6px;flex-wrap:wrap}
+.fi.new{border-color:var(--crit);box-shadow:0 0 0 1px var(--crit),0 0 26px -8px var(--crit);animation:feedin .6s cubic-bezier(.2,.9,.3,1.2)}
+.fi.nr b{color:var(--dim);font-weight:500}
+
+/* ---------- 脆弱性 ---------- */
+.sla{display:grid;gap:10px}
+.sla-row{display:grid;grid-template-columns:38px minmax(0,1fr) 82px;gap:10px;align-items:center}
+.pc{display:inline-grid;place-items:center;height:24px;border-radius:6px;font:700 12px var(--f-label);color:var(--paper-ink);background:var(--pcol)}
+.pc.p1{--pcol:var(--crit)}.pc.p2{--pcol:var(--serious)}.pc.p3{--pcol:var(--warn)}.pc.p4{--pcol:var(--int)}
+.stk{display:flex;gap:2px;height:18px}
+.stk i{display:block;height:100%;transition:width .7s}
+.stk i:last-child{border-radius:0 4px 4px 0}
+.stk .on{background:var(--s1)}
+.stk .od{background:var(--crit)}
+.sla-row .sv{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.sla-row .sv b{font-size:14px}
+.sla-row .sv small{display:block;color:var(--crit);font-weight:700}
+.meter{display:grid;gap:6px;margin-top:4px;padding-top:12px;border-top:1px solid var(--hair)}
+.meter-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--dim)}
+.meter-top b{font-size:22px;color:var(--text)}
+.mtrack{position:relative;height:10px;border-radius:5px;background:color-mix(in srgb,var(--mc) 22%,var(--deck))}
+.mtrack i{display:block;height:100%;border-radius:5px;background:var(--mc);transition:width .8s}
+.mtrack .tgt{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text)}
+.mlabels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.cal{display:grid;gap:2px}
+.cal-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--hair)}
+.cal-row b{display:block;font-size:13px}
+.cal-row small{display:block;font-size:11.5px;color:var(--muted)}
+.assets{display:grid;gap:2px}
+.as-row{display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--hair);border-radius:8px;transition:background .4s,box-shadow .4s}
+.as-row b{display:block;font-size:13px}
+.as-row .as-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.tg{font-size:11px;padding:0 6px;border-radius:4px;border:1px solid var(--rule);color:var(--dim)}
+.tg.kev{border-color:color-mix(in srgb,var(--crit) 60%,transparent);color:var(--crit)}
+.as-row .sb{height:5px;margin-top:5px;border-radius:3px;background:var(--hair)}
+.as-row .sb i{display:block;height:100%;border-radius:3px;background:var(--s1)}
+.as-row .sc{text-align:right;font-weight:900;font-size:16px;font-variant-numeric:tabular-nums}
+.as-row.new{background:color-mix(in srgb,var(--crit) 12%,transparent);box-shadow:inset 0 0 0 1px var(--crit)}
+
+/* ---------- 風險處置與成效 ---------- */
+.matrix{display:grid;grid-template-columns:22px minmax(0,1fr);grid-template-rows:auto 20px;gap:6px}
+.mx-y{display:flex;flex-direction:column;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);font-weight:700}
+.mx-y span:nth-child(2){writing-mode:vertical-rl;letter-spacing:.2em}
+.mx-x{grid-column:2;display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:700}
+.mx{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;aspect-ratio:1.25}
+.mc{display:grid;place-items:center;border-radius:5px;font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;color:var(--text);background:color-mix(in srgb,var(--hc) var(--ha),var(--deck));cursor:default;transition:transform .3s,box-shadow .3s}
+.mc.zero{color:transparent}
+.mc.none{--hc:var(--muted)}.mc.low{--hc:var(--good)}.mc.mid{--hc:var(--warn)}.mc.high{--hc:var(--serious)}.mc.crit{--hc:var(--crit)}
+.mc{--ha:16%}.mc:not(.zero){--ha:46%}
+.mc:hover{box-shadow:0 0 0 2px var(--text)}
+.mc.pop{animation:cellpop .8s cubic-bezier(.3,1.6,.5,1) 2}
+.mx-legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--dim)}
+.mx-legend span{display:inline-flex;align-items:center;gap:5px}
+.mx-legend i{width:10px;height:10px;border-radius:2px;background:color-mix(in srgb,var(--hc) 60%,var(--deck))}
+.tk-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tk{padding:8px 10px;border-radius:10px;background:var(--deck-hi);border:1px solid var(--hair)}
+.tk span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--dim)}
+.tk span svg{width:13px;height:13px}
+.tk b{font-size:22px;font-weight:900}
+.tk.od{border-color:color-mix(in srgb,var(--crit) 50%,var(--hair))}
+.tk.od span{color:var(--crit)}
+.od-list{display:grid;gap:2px}
+.od-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:6px 2px;border-bottom:1px solid var(--hair);font-size:12.5px}
+.od-list small{display:block;color:var(--muted);font-size:11.5px}
+.od-list .od-d{color:var(--crit);font-weight:700;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kpi{min-width:0}
+.kpi-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.kpi-top span{font-size:12.5px;color:var(--dim)}
+.kpi-top b{font-size:20px;font-weight:900}
+.kpi-top b small{font-size:12px;color:var(--dim);margin-left:2px}
+.kpi>svg{display:block;width:100%;height:84px;overflow:visible}
+.kpi-foot{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--muted)}
+.line-s{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.area-s{fill:var(--s1);opacity:.1}
+.dot-s{fill:var(--s1);stroke:var(--deck);stroke-width:2}
+.tgt-l{stroke:var(--dim);stroke-width:1;stroke-dasharray:3 3}
+.tgt-t{fill:var(--muted);font-size:10.5px;font-family:var(--f-ui)}
+.end-t{fill:var(--text);font-size:11.5px;font-weight:700;font-family:var(--f-ui);font-variant-numeric:tabular-nums}
+
+/* ---------- 提示框 ---------- */
+.tip{position:fixed;z-index:60;min-width:150px;max-width:260px;padding:9px 11px;border-radius:10px;background:var(--deck-hi);border:1px solid var(--axis);box-shadow:0 14px 30px -12px var(--shadow);pointer-events:none;font-size:12.5px}
+.tip .tt{font-size:12px;color:var(--muted);margin-bottom:4px}
+.tip .tr{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:6px;align-items:center;padding:1px 0}
+.tip .tr i{height:2px;border-radius:1px;background:var(--c)}
+.tip .tr span{color:var(--dim)}
+.tip .tr b{font-variant-numeric:tabular-nums;text-align:right}
+.tip .tsum{margin-top:4px;padding-top:4px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;font-weight:900}
+
+/* ---------- 導覽抽屜 ---------- */
+.drawer{position:fixed;left:0;right:0;bottom:0;z-index:35;max-height:min(52vh,460px);overflow-y:auto;background:var(--void-glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--rule);box-shadow:0 -20px 40px -20px var(--shadow);padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));animation:drawerin .35s cubic-bezier(.2,.9,.3,1)}
+.drawer.drill{border-top-color:var(--crit)}
+.dr-inner{display:grid;gap:12px;max-width:1500px;margin:0 auto}
+@media (min-width:980px){.dr-inner{grid-template-columns:300px minmax(0,1fr) auto;grid-template-areas:"host step nav" "host cols cols";align-items:start;column-gap:16px;row-gap:8px}.dr-body{display:contents}.dr-host{grid-area:host}.dr-step{grid-area:step;align-self:center;margin-bottom:0}.dr-cols{grid-area:cols}.dr-nav{grid-area:nav}}
+.dr-host{display:flex;align-items:flex-end;gap:10px}
+.dr-face{position:relative;width:62px;height:62px;flex:none;overflow:hidden;border-radius:50%;border:3px solid var(--paper);transition:transform .3s}
+.dr-face.arale{border-color:var(--int);box-shadow:0 0 14px -2px var(--int)}
+.dr-face.arale::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,var(--scan) 3px 4px)}
+.dr-face img{width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+.dr-face.talk{transform:translateY(-3px) scale(1.06)}
+.bubble{position:relative;flex:1;min-width:0;min-height:56px;padding:7px 13px 9px;border-radius:14px;font-size:14px;line-height:1.55}
+.bubble-name{display:block;font:700 10.5px var(--f-label);letter-spacing:.12em;opacity:.7}
+.bubble.allan{background:var(--paper);color:var(--paper-ink);font-family:var(--f-allan);font-weight:700}
+.bubble.arale{background:color-mix(in srgb,var(--int) 12%,var(--deck));border:1px solid color-mix(in srgb,var(--int) 60%,transparent);font-family:var(--f-arale)}
+.dr-step{font-size:12px;color:var(--muted);margin-bottom:8px}
+.dr-step b{color:var(--text);font-size:16px;margin-left:4px}
+.dr-cols{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.dr-cols section{padding:10px 12px;border-radius:12px;background:var(--deck);border:1px solid var(--rule)}
+.dr-cols h4{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:900;color:var(--hc);margin-bottom:4px}
+.dr-cols h4 svg{width:15px;height:15px}
+.dr-cols p,.dr-cols li{font-size:13.5px;line-height:1.65}
+.dr-cols li{display:flex;gap:6px}
+.dr-cols li svg{width:14px;height:14px;margin-top:4px;color:var(--good)}
+.h-look{--hc:var(--int)}.h-mean{--hc:var(--ext)}.h-act{--hc:var(--good)}
+.timeline{display:grid;gap:6px}
+.timeline li{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;align-items:start;opacity:.35;transition:opacity .4s}
+.timeline li.done{opacity:1}
+.timeline li b{font:700 12px var(--f-label);color:var(--warn)}
+.timeline li.done b::before{content:"✓ ";color:var(--good)}
+.dr-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+.dr-dots{display:flex;gap:4px;width:100%;justify-content:flex-end}
+.dr-dots i{width:16px;height:4px;border-radius:2px;background:var(--rule)}
+.dr-dots i.on{background:var(--int)}
+.dr-dots i.done{background:color-mix(in srgb,var(--int) 45%,var(--rule))}
+@media (max-width:979px){.dr-nav{position:sticky;bottom:calc(-12px - env(safe-area-inset-bottom,0px));z-index:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 -16px calc(-12px - env(safe-area-inset-bottom,0px));padding:8px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--void);border-top:1px solid var(--rule)}.dr-nav .btn{justify-content:center;padding:0 6px;gap:4px;font-size:13px}.dr-dots{grid-column:1/-1;order:-1;justify-content:center}}
+
+/* ---------- 開場 ---------- */
+.welcome{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:var(--scrim);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.wl-card{position:relative;width:min(760px,100%);max-height:calc(100% - 8px);overflow:auto;display:grid;gap:14px;padding:26px;border-radius:22px;background:linear-gradient(160deg,var(--deck-hi),var(--deck));border:1px solid color-mix(in srgb,var(--int) 40%,var(--rule));box-shadow:0 30px 70px -20px var(--shadow);animation:drawerin .45s cubic-bezier(.2,.9,.3,1)}
+@media (min-width:720px){.wl-card{grid-template-columns:230px minmax(0,1fr);align-items:center}}
+.wl-cast{display:flex;justify-content:center;align-items:flex-end}
+.wl-cast img{height:230px;width:auto;filter:drop-shadow(0 12px 20px var(--shadow))}
+.wl-cast img + img{height:205px;margin-left:-40px;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--int) 50%,transparent))}
+.eyebrow{display:flex;align-items:center;gap:10px;font:600 12px var(--f-label);letter-spacing:.22em;color:var(--int);text-transform:uppercase}
+.eyebrow::before{content:"";width:22px;height:2px;background:currentColor}
+.wl-copy{display:grid;gap:12px}
+.wl-copy h2{font-size:clamp(28px,4vw,38px);font-weight:900;line-height:1.2}
+.wl-copy p{color:var(--dim);font-size:14.5px}
+.wl-list{display:grid;gap:4px}
+.wl-list li{display:flex;gap:8px;font-size:13.5px}
+.wl-list svg{width:16px;height:16px;margin-top:3px;color:var(--int)}
+.wl-btns{display:flex;flex-wrap:wrap;gap:10px}
+.wl-btns .btn{height:44px;padding:0 18px;font-size:15px}
+.wl-note{font-size:12.5px;color:var(--muted)}
+@media (max-width:719px){.wl-cast img{height:150px}.wl-cast img + img{height:135px}}
+
+@keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--crit) 70%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+@keyframes blink{50%{opacity:0}}
+@keyframes marquee{to{transform:translateX(-50%)}}
+@keyframes flash{0%{box-shadow:0 0 0 2px var(--crit),0 0 30px -4px var(--crit)}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes feedin{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes cellpop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes drawerin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+</style>
+<!-- /head -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.5-6.5"/><circle cx="16" cy="9.5" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-alarm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4M12 3v2M4 6l1.5 1.5M20 6l-1.5 1.5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><path d="M8 7.5h.01M8 16.5h.01"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></symbol>
+  <symbol id="i-bug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="8" width="10" height="12" rx="5"/><path d="M12 8v12M7 12H3M21 12h-4M7 17l-3 2M17 17l3 2M8 5l2 3M16 5l-2 3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 5l7 9H5z" fill="currentColor"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 19l7-9H5z" fill="currentColor"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/><path d="M10.5 9.5v5l4-2.5z" fill="currentColor"/></symbol>
+</svg>
+<div class="veil" aria-hidden="true"></div>
+
+<header class="top" id="top">
+  <div class="bar">
+    <div class="brand"><svg aria-hidden="true"><use href="#i-radar"/></svg><div><h1>CTI 戰情室</h1><small>THREAT INTELLIGENCE WAR ROOM</small></div></div>
+    <span class="live" title="目前時間"><i aria-hidden="true"></i><span id="clock">--:--:--</span></span>
+    <div class="bar-actions">
+      <button class="btn primary" type="button" data-act="tour"><svg aria-hidden="true"><use href="#i-play"/></svg><span class="lbl">語音導覽</span></button>
+      <button class="btn drill" type="button" data-act="drill"><svg aria-hidden="true"><use href="#i-alarm"/></svg><span class="lbl">情境演練</span></button>
+      <button class="btn" type="button" id="voiceBtn" data-act="voice" aria-pressed="true" title="角色語音"><svg aria-hidden="true"><use href="#i-vol"/></svg><span class="lbl">語音</span></button>
+    </div>
+  </div>
+  <div class="filters">
+    <div class="seg" role="group" aria-label="統計期間">
+      <button type="button" data-range="7" aria-pressed="false">近 7 天</button>
+      <button type="button" data-range="30" aria-pressed="true">近 30 天</button>
+      <button type="button" data-range="90" aria-pressed="false">近 90 天</button>
+    </div>
+    <span class="fnote"><b>示範組織</b>・模擬資料，非實際環境・更新於 <span id="updated" class="num">--:--</span></span>
+    <span class="credit-top">製作：Allan顧問，2027/10/17</span>
+  </div>
+</header>
+
+<main class="board" id="board">
+
+  <!-- 整體態勢 -->
+  <section class="zone z-int" aria-labelledby="zh0">
+    <div class="zone-head"><svg aria-hidden="true"><use href="#i-gauge"/></svg><h2 id="zh0">整體態勢</h2><span>Situation</span></div>
+    <article class="card s3" id="cThreat">
+      <header class="card-head"><div><h3>威脅指數</h3><p class="card-sub">綜合相關情資、弱點、處置與告警</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_overview"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="gauge-wrap">
+        <div class="gauge" id="gauge"></div>
+        <span class="level" id="level"></span>
+      </div>
+      <ul class="factors" id="factors" aria-label="威脅指數組成"></ul>
+    </article>
+    <div class="card tiles s5" id="cKpis" aria-label="關鍵指標"></div>
+    <article class="card s4" id="cBrief">
+      <header class="card-head"><div><h3>AI 晨報</h3><p class="card-sub">過去 24 小時重點摘要</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_brief"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="brief">
+        <div class="brief-who"><span class="av"><img src="{{sprite:arale-explain}}" alt=""></span><div><b>AI 助理 阿拉蕾</b><small id="briefDate"></small></div></div>
+        <p class="brief-text" id="briefText"></p>
+        <p class="ai-note"><svg aria-hidden="true"><use href="#i-warn"/></svg>AI 產生的摘要，須由資安人員覆核後發布</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- 內部情資 -->
+  <section class="zone z-int" aria-labelledby="zh1">
+    <div class="zone-head"><svg aria-hidden="true"><use href="#i-server"/></svg><h2 id="zh1">內部情資</h2><span>Internal</span></div>
+    <article class="card s8 wide" id="cTrend">
+      <header class="card-head"><div><h3>內部告警趨勢</h3><p class="card-sub" id="trendSub">每日告警數，依來源堆疊</p></div><div class="card-tools"><button class="mini" type="button" data-table="trend" aria-pressed="false"><svg aria-hidden="true"><use href="#i-table"/></svg>表格</button><button class="mini explain" type="button" data-explain="s_trend"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="legend" id="lgTrend"></div>
+      <div class="chart" id="chTrend"></div>
+      <div class="tbl" id="tb-trend" hidden></div>
+    </article>
+    <article class="card s4" id="cAlerts">
+      <header class="card-head"><div><h3>告警類型排行</h3><p class="card-sub">期間內次數與較前期變化</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_alerts"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="rank" id="rank"></div>
+    </article>
+    <div class="ticker" id="ticker" aria-hidden="true"><b class="ticker-tag">LIVE・模擬</b><div class="ticker-track" id="tickerTrack"></div></div>
+  </section>
+
+  <!-- 外部情資 -->
+  <section class="zone z-ext" aria-labelledby="zh2">
+    <div class="zone-head"><svg aria-hidden="true"><use href="#i-globe"/></svg><h2 id="zh2">外部情資</h2><span>External</span></div>
+    <article class="card s4" id="cSources">
+      <header class="card-head"><div><h3>情資來源分布</h3><p class="card-sub" id="srcSub">期間內蒐集則數</p></div><div class="card-tools"><button class="mini" type="button" data-table="sources" aria-pressed="false"><svg aria-hidden="true"><use href="#i-table"/></svg>表格</button><button class="mini explain" type="button" data-explain="s_funnel"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="hbars" id="sources"></div>
+      <div class="tbl" id="tb-sources" hidden></div>
+    </article>
+    <article class="card s4" id="cFunnel">
+      <header class="card-head"><div><h3>相關性過濾漏斗</h3><p class="card-sub">從蒐集到結案的轉換</p></div><div class="card-tools"><button class="mini" type="button" data-table="funnel" aria-pressed="false"><svg aria-hidden="true"><use href="#i-table"/></svg>表格</button><button class="mini explain" type="button" data-explain="s_funnel"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="hbars funnel" id="funnel"></div>
+      <div class="tbl" id="tb-funnel" hidden></div>
+    </article>
+    <article class="card s4" id="cFeed">
+      <header class="card-head"><div><h3>最新外部情資</h3><p class="card-sub">相關性、威脅程度與處置狀態</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_feed"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <ul class="feed" id="feed"></ul>
+    </article>
+  </section>
+
+  <!-- 脆弱性 -->
+  <section class="zone z-vul" aria-labelledby="zh3">
+    <div class="zone-head"><svg aria-hidden="true"><use href="#i-bug"/></svg><h2 id="zh3">脆弱性</h2><span>Vulnerability</span></div>
+    <article class="card s4" id="cSla">
+      <header class="card-head"><div><h3>未修補弱點與修補期限</h3><p class="card-sub">依 P1～P4 優先序</p></div><div class="card-tools"><button class="mini" type="button" data-table="sla" aria-pressed="false"><svg aria-hidden="true"><use href="#i-table"/></svg>表格</button><button class="mini explain" type="button" data-explain="s_sla"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="legend"><span><i style="--c:var(--s1)"></i>期限內</span><span><i style="--c:var(--crit)"></i><svg aria-hidden="true" style="color:var(--crit)"><use href="#i-warn"/></svg>已逾期</span></div>
+      <div class="sla" id="sla"></div>
+      <div class="tbl" id="tb-sla" hidden></div>
+      <div class="meter" id="slaMeter"></div>
+    </article>
+    <article class="card s4" id="cCal">
+      <header class="card-head"><div><h3>檢測行事曆</h3><p class="card-sub">脆弱性識別的執行週期與狀態</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_cal"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="cal" id="cal"></div>
+    </article>
+    <article class="card s4" id="cAssets">
+      <header class="card-head"><div><h3>高風險資產</h3><p class="card-sub">依弱點、KEV、曝險與重要性綜合評分</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_assets"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="assets" id="assets"></div>
+    </article>
+  </section>
+
+  <!-- 風險處置與成效 -->
+  <section class="zone z-ok" aria-labelledby="zh4">
+    <div class="zone-head"><svg aria-hidden="true"><use href="#i-shield"/></svg><h2 id="zh4">風險處置與成效</h2><span>Response &amp; KPI</span></div>
+    <article class="card s4" id="cMatrix">
+      <header class="card-head"><div><h3>風險矩陣</h3><p class="card-sub">未結案情資：可能性 × 衝擊</p></div><div class="card-tools"><button class="mini" type="button" data-table="matrix" aria-pressed="false"><svg aria-hidden="true"><use href="#i-table"/></svg>表格</button><button class="mini explain" type="button" data-explain="s_matrix"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="matrix"><div class="mx-y" aria-hidden="true"><span>高</span><span>可能性</span><span>低</span></div><div class="mx" id="mx"></div><div class="mx-x" aria-hidden="true"><span>低</span><span>衝擊</span><span>高</span></div></div>
+      <div class="mx-legend"><span style="--hc:var(--crit)"><i></i>重大 ≥20</span><span style="--hc:var(--serious)"><i></i>高 12～19</span><span style="--hc:var(--warn)"><i></i>中 6～11</span><span style="--hc:var(--good)"><i></i>低 3～5</span></div>
+      <div class="tbl" id="tb-matrix" hidden></div>
+    </article>
+    <article class="card s3" id="cTickets">
+      <header class="card-head"><div><h3>處置單追蹤</h3><p class="card-sub" id="tkSub">情資與弱點處置狀態</p></div><div class="card-tools"><button class="mini explain" type="button" data-explain="s_matrix"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="tk-stats" id="tkStats"></div>
+      <p class="card-sub">逾期項目</p>
+      <ul class="od-list" id="odList"></ul>
+    </article>
+    <article class="card s5 wide" id="cKpi">
+      <header class="card-head"><div><h3>成效指標趨勢</h3><p class="card-sub">近 6 個月，虛線為目標值</p></div><div class="card-tools"><button class="mini" type="button" data-table="kpi" aria-pressed="false"><svg aria-hidden="true"><use href="#i-table"/></svg>表格</button><button class="mini explain" type="button" data-explain="s_kpi"><svg aria-hidden="true"><use href="#i-info"/></svg>解讀</button></div></header>
+      <div class="kpis" id="kpis"></div>
+      <div class="tbl" id="tb-kpi" hidden></div>
+    </article>
+  </section>
+</main>
+
+<aside class="drawer" id="drawer" hidden aria-label="戰情解說">
+  <div class="dr-inner">
+    <div class="dr-host">
+      <div class="dr-face" id="drFace"><img id="drImg" src="{{sprite:arale-laugh}}" alt=""></div>
+      <div class="bubble arale" id="drBubble"><span class="bubble-name" id="drName">AI 助理 阿拉蕾</span><span class="bubble-text" id="drText"></span></div>
+    </div>
+    <div class="dr-body">
+      <p class="dr-step"><span id="drStep">導覽 1 / 11</span><b id="drTitle"></b></p>
+      <div class="dr-cols">
+        <section class="h-look"><h4><svg aria-hidden="true"><use href="#i-eye"/></svg>畫面在看什麼</h4><p id="drLook"></p></section>
+        <section class="h-mean"><h4><svg aria-hidden="true"><use href="#i-flag"/></svg>資安管理意涵</h4><p id="drMean"></p></section>
+        <section class="h-act"><h4><svg aria-hidden="true"><use href="#i-target"/></svg><span id="drActTitle">建議行動與預防措施</span></h4><ul id="drAct"></ul></section>
+      </div>
+    </div>
+    <div class="dr-nav">
+      <button class="btn" type="button" data-act="prev"><svg aria-hidden="true"><use href="#i-prev"/></svg>上一步</button>
+      <button class="btn primary" type="button" data-act="next" id="nextBtn"><span>下一步</span><svg aria-hidden="true"><use href="#i-next"/></svg></button>
+      <button class="btn" type="button" data-act="auto" id="autoBtn" aria-pressed="true" title="語音結束後自動進入下一步"><svg aria-hidden="true"><use href="#i-auto"/></svg>自動</button>
+      <button class="btn" type="button" data-act="close" aria-label="結束解說"><svg aria-hidden="true"><use href="#i-x"/></svg>結束</button>
+      <div class="dr-dots" id="drDots" aria-hidden="true"></div>
+    </div>
+  </div>
+</aside>
+
+<div class="welcome" id="welcome">
+  <div class="wl-card" role="dialog" aria-modal="true" aria-labelledby="wlTitle">
+    <div class="wl-cast" aria-hidden="true"><img src="{{sprite:allan-present}}" alt=""><img src="{{sprite:arale-present}}" alt=""></div>
+    <div class="wl-copy">
+      <p class="eyebrow">CTI War Room</p>
+      <h2 id="wlTitle">CTI 戰情室</h2>
+      <p>用一個畫面掌握內部情資、外部情資與脆弱性。導覽會逐一說明每個區塊：</p>
+      <ul class="wl-list">
+        <li><svg aria-hidden="true"><use href="#i-eye"/></svg>畫面在看什麼</li>
+        <li><svg aria-hidden="true"><use href="#i-flag"/></svg>代表什麼資安管理意涵</li>
+        <li><svg aria-hidden="true"><use href="#i-target"/></svg>應該採取哪些行動或預防措施</li>
+      </ul>
+      <div class="wl-btns">
+        <button class="btn primary" type="button" data-act="tour"><svg aria-hidden="true"><use href="#i-play"/></svg>開始語音導覽（約 4 分鐘）</button>
+        <button class="btn" type="button" data-act="explore">自行瀏覽</button>
+      </div>
+      <p class="wl-note">畫面數據為示範組織的模擬資料。製作：Allan顧問，2027/10/17</p>
+    </div>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<p class="sr-only" aria-live="polite" id="srLine"></p>
+
+<script>
+/*{{SCRIPT_JS}}*/
+/*{{AUDIO_JS}}*/
+</script>
+<script>
+(() => {
+'use strict';
+
+const SPR = {
+  allan: { smile: '{{sprite:allan-smile}}', laugh: '{{sprite:allan-laugh}}', think: '{{sprite:allan-think}}', point: '{{sprite:allan-point}}' },
+  arale: { laugh: '{{sprite:arale-laugh}}', explain: '{{sprite:arale-explain}}', fight: '{{sprite:arale-fight}}', wow: '{{sprite:arale-wow}}' }
+};
+const VOICE = window.CTI_SCRIPT || {};
+const AUD = window.CTI_AUDIO || {};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pad = n => String(n).padStart(2, '0');
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function h(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function useIcon(id) {
+  const s = svgEl('svg', { 'aria-hidden': 'true' });
+  svgEl('use', { href: '#' + id }, s);
+  return s;
+}
+function chip(text, color, iconId) {
+  const c = h('span', 'chipst');
+  c.style.setProperty('--sc', color);
+  if (iconId) c.appendChild(useIcon(iconId));
+  c.appendChild(document.createTextNode(text));
+  return c;
+}
+const niceMax = v => {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+};
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'K' : String(Math.round(n));
+const fmtN = n => Math.round(n).toLocaleString('zh-TW');
+
+/* ================= 示範資料（固定種子，每次開啟相同） ================= */
+function mulberry32(a) {
+  return () => {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const rnd = mulberry32(20271017);
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
+const DAYS = 182;
+const dayDate = i => { const d = new Date(TODAY); d.setDate(d.getDate() - (DAYS - 1 - i)); return d; };
+const md = d => (d.getMonth() + 1) + '/' + d.getDate();
+const WD = '日一二三四五六';
+const SOURCES = [
+  { key: 'net', name: '網路設備', c: 'var(--s1)', base: 38 },
+  { key: 'sys', name: '系統日誌', c: 'var(--s2)', base: 24 },
+  { key: 'edr', name: '端點 EDR', c: 'var(--s3)', base: 9 },
+  { key: 'uba', name: '使用者行為', c: 'var(--s4)', base: 6 },
+  { key: 'ppl', name: '人員通報', c: 'var(--s5)', base: 2.5 }
+];
+const EVENTS = [
+  { day: DAYS - 13, k: { sys: 4.2, net: 1.5 }, label: 'AD 暴力破解' },
+  { day: DAYS - 5, k: { ppl: 5, edr: 2.2 }, label: '釣魚郵件潮' },
+  { day: DAYS - 42, k: { net: 2.6 }, label: '外部大量掃描' },
+  { day: DAYS - 76, k: { edr: 3.2, sys: 1.4 }, label: '惡意程式感染' }
+];
+const ALERTS = SOURCES.map(s => Array.from({ length: DAYS }, (_, i) => {
+  const wd = dayDate(i).getDay();
+  let v = s.base * (wd === 0 || wd === 6 ? .62 : 1) * (.78 + rnd() * .44);
+  EVENTS.forEach(ev => {
+    const d = Math.abs(i - ev.day);
+    if (ev.k[s.key] && d <= 1) v *= d === 0 ? ev.k[s.key] : 1 + (ev.k[s.key] - 1) * .3;
+  });
+  return Math.round(v);
+}));
+const EXT_SRC = [
+  { name: 'NICS', base: .9 }, { name: 'TWCERT/CC', base: 1.3 }, { name: '產業 ISAC', base: .5 },
+  { name: 'CISA KEV', base: .45 }, { name: '原廠 PSIRT', base: .85 }, { name: '媒體與研究', base: 2.1 }
+];
+const EXT = EXT_SRC.map(s => Array.from({ length: DAYS }, () => Math.round(s.base * (.3 + rnd() * 1.4))));
+const ALERT_TYPES = [
+  { t: 'AD 登入失敗（事件 4625）', src: 1, share: .42, st: ['調查中', 'var(--warn)', 'i-clock'], boost: 2.1 },
+  { t: '惡意 IP 連線阻擋', src: 0, share: .55, st: ['自動阻擋', 'var(--good)', 'i-check'], boost: 1.05 },
+  { t: '非上班時段 VPN 登入', src: 0, share: .08, st: ['待確認', 'var(--warn)', 'i-clock'], boost: 1.3 },
+  { t: '可疑 PowerShell 執行', src: 2, share: .35, st: ['已隔離 1 台', 'var(--good)', 'i-check'], boost: .92 },
+  { t: '大量個資外寄（DLP）', src: 3, share: .25, st: ['調查中', 'var(--warn)', 'i-clock'], boost: 1 },
+  { t: '員工回報可疑郵件', src: 4, share: .9, st: ['已宣導', 'var(--good)', 'i-check'], boost: 2.5 }
+];
+const LV = {
+  crit: { name: '重大', c: 'var(--crit)' }, high: { name: '高', c: 'var(--serious)' },
+  mid: { name: '中', c: 'var(--warn)' }, low: { name: '低', c: 'var(--good)' }, none: { name: '現行不影響', c: 'var(--muted)' }
+};
+const ST_COLOR = { '應變中': 'var(--crit)', '處置中': 'var(--serious)', '待評估': 'var(--warn)', '排程修補': 'var(--warn)', '已調整規則': 'var(--good)', '已宣導': 'var(--good)', '已歸檔': 'var(--muted)', '已結案': 'var(--good)' };
+const BASE_FEED = [
+  { d: 0, src: 'CISA KEV', t: 'Chrome 零時差漏洞，已列入 KEV', rel: '員工電腦', lv: 'high', st: '處置中' },
+  { d: 1, src: 'NICS', t: 'WordPress 熱門外掛漏洞遭大量掃描', rel: '官方網站', lv: 'high', st: '待評估' },
+  { d: 1, src: 'MSRC', t: 'Windows Server 權限提升漏洞（本月安全更新）', rel: 'AD 網域控制站', lv: 'high', st: '排程修補' },
+  { d: 2, src: 'F-ISAC', t: '同業遭勒索軟體攻擊，手法為釣魚郵件巨集', rel: '郵件與端點', lv: 'high', st: '已調整規則' },
+  { d: 3, src: 'TWCERT/CC', t: '假冒 Microsoft 365 登入頁的釣魚活動', rel: 'Microsoft 365', lv: 'mid', st: '已宣導' },
+  { d: 4, src: 'iThome', t: 'macOS 系統權限提升漏洞', rel: null, lv: 'none', st: '已歸檔' },
+  { d: 5, src: 'NICS', t: '某品牌工控 PLC 韌體漏洞', rel: null, lv: 'none', st: '已歸檔' }
+];
+const DRILL_FEED = { d: 0, src: 'NICS・KEV', t: 'A 廠牌 SSL VPN 零時差漏洞，已遭利用', rel: 'SSL VPN ×2（對外）', lv: 'crit', st: '應變中', drill: true };
+const VULN = [{ p: 1, on: 0, od: 1 }, { p: 2, on: 6, od: 2 }, { p: 3, on: 22, od: 4 }, { p: 4, on: 41, od: 0 }];
+const SLA_RATE = { 7: 83, 30: 87, 90: 89 };
+const CAL = [
+  { t: '內部弱點掃描', f: '每月', last: -14, next: 16, st: ['正常', 'var(--good)', 'i-check'] },
+  { t: '外部弱點掃描', f: '每季', last: -63, next: 27, st: ['正常', 'var(--good)', 'i-check'] },
+  { t: '滲透測試', f: '每年', last: -340, next: 25, st: ['25 天後到期', 'var(--warn)', 'i-clock'], note: '需先取得授權並界定範圍' },
+  { t: '資安健診', f: '每年', last: -180, next: 185, st: ['正常', 'var(--good)', 'i-check'] },
+  { t: '原碼檢測', f: '每次上線', custom: '本月上線 3 次，完成檢測 2 次', st: ['1 次未檢測', 'var(--crit)', 'i-warn'] },
+  { t: '組態檢核（GCB）', f: '每季', last: -95, next: -5, st: ['逾期 5 天', 'var(--crit)', 'i-warn'] },
+  { t: '社交工程演練', f: '每年', last: -200, next: 165, note: '上次點擊率 6.8%', st: ['正常', 'var(--good)', 'i-check'] }
+];
+const ASSETS = [
+  { t: 'AD 網域控制站', tags: ['核心'], v: 'P1 ×1（逾期）・P2 ×1', kev: true, s: 84 },
+  { t: '員工電腦（Chrome）', tags: ['全公司端點'], v: 'P2 ×1', kev: true, s: 72 },
+  { t: '官方網站 WordPress', tags: ['對外'], v: 'P2 ×2・P3 ×3', kev: false, s: 68 },
+  { t: 'ERP 系統', tags: ['核心', '含個資'], v: 'P2 ×2・P3 ×4', kev: false, s: 61 },
+  { t: '檔案伺服器', tags: ['內部'], v: 'P2 ×1・P3 ×5', kev: false, s: 42 }
+];
+const DRILL_ASSET = { t: 'SSL VPN 設備 ×2', tags: ['對外', '核心'], v: 'P1 ×1（零時差）', kev: true, s: 97, drill: true };
+const RISKS = [
+  { t: 'Chrome 零時差漏洞（KEV）', L: 4, I: 4 }, { t: 'WordPress 外掛漏洞', L: 3, I: 4 },
+  { t: 'Windows Server 權限提升', L: 3, I: 4 }, { t: '同業勒索軟體手法', L: 3, I: 5 },
+  { t: 'AD 帳號暴力破解', L: 4, I: 3 }, { t: '假冒 Microsoft 365 釣魚', L: 4, I: 2 },
+  { t: 'DLP 大量個資外寄（調查中）', L: 2, I: 4 }, { t: '使用中套件低風險漏洞', L: 2, I: 2 }
+];
+const DRILL_RISK = { t: 'A 廠牌 SSL VPN 零時差漏洞', L: 5, I: 5, drill: true };
+const OVERDUE = [
+  { t: 'AD 權限提升修補（P1）', o: 'IT 維運組', d: 1 },
+  { t: '官網 WordPress 外掛更新', o: '網站組', d: 5 },
+  { t: 'ERP 中介軟體修補', o: 'ERP 組', d: 12 }
+];
+const CLOSED = { 7: 5, 30: 18, 90: 47 };
+const KPI = [
+  { t: '平均偵測時間 MTTD', unit: '小時', v: [18, 15, 13.5, 11, 9.5, 8], target: 8, lower: true },
+  { t: '高風險弱點平均修補', unit: '天', v: [24, 21, 19, 17, 15, 14], target: 14, lower: true },
+  { t: '釣魚演練點擊率', unit: '%', v: [12.5, 11, 9.8, 8.6, 7.4, 6.8], target: 5, lower: true },
+  { t: '重要日誌來源納管率', unit: '%', v: [88, 90, 92, 94, 96, 97], target: 100, lower: false }
+];
+const MONTHS = Array.from({ length: 6 }, (_, k) => { const d = new Date(TODAY); d.setDate(1); d.setMonth(d.getMonth() - (5 - k)); return (d.getMonth() + 1) + '月'; });
+
+/* ================= 狀態（情境演練會改變） ================= */
+const S = { range: 30, stage: 0 };
+const drillOn = () => S.stage >= 1 && S.stage <= 3;
+const drillConfirmed = () => S.stage === 2 || S.stage === 3;
+function feedItems() {
+  const items = BASE_FEED.slice();
+  if (S.stage >= 1) items.unshift(Object.assign({}, DRILL_FEED, { st: S.stage === 4 ? '已結案' : '應變中' }));
+  return items;
+}
+function vulns() { return VULN.map(v => v.p === 1 && drillConfirmed() ? Object.assign({}, v, { on: v.on + 1 }) : v); }
+function p1Open() { const v = vulns()[0]; return v.on + v.od; }
+function overdueCount() { return VULN.reduce((a, v) => a + v.od, 0); }
+function threat() {
+  const high = BASE_FEED.filter(f => f.lv === 'high').length;
+  const f = [
+    { t: '相關外部情資（高）', v: Math.min(20, high * 5) },
+    { t: '重大情資（KEV・對外核心）', v: drillOn() ? 20 : 0, hot: true },
+    { t: '未修補 P1 弱點', v: p1Open() * 10, hot: p1Open() > 1 },
+    { t: '逾期處置與弱點', v: Math.min(10, Math.round(overdueCount() * 1.5)) },
+    { t: '內部告警異常', v: 8 }
+  ].filter(x => x.v > 0);
+  const total = Math.min(100, 12 + f.reduce((a, x) => a + x.v, 0));
+  return { total, f };
+}
+const levelOf = v => v >= 75 ? { name: '重大', c: 'var(--crit)', icon: 'i-alarm' } : v >= 55 ? { name: '高', c: 'var(--serious)', icon: 'i-warn' } : v >= 30 ? { name: '中', c: 'var(--warn)', icon: 'i-info' } : { name: '低', c: 'var(--good)', icon: 'i-check' };
+const pendingCount = () => 6 + (drillOn() ? 1 : 0);
+function rangeSum(series, n, offset) {
+  let s = 0;
+  for (let i = DAYS - n - (offset || 0); i < DAYS - (offset || 0); i++) s += series[i];
+  return s;
+}
+const alertTotal = (n, off) => SOURCES.reduce((a, _, k) => a + rangeSum(ALERTS[k], n, off), 0);
+
+/* ================= 提示框 ================= */
+const tip = $('#tip');
+function showTip(e, title, rows, sum) {
+  tip.textContent = '';
+  tip.appendChild(h('div', 'tt', title));
+  rows.forEach(r => {
+    const row = h('div', 'tr');
+    const k = h('i');
+    k.style.setProperty('--c', r.c || 'var(--dim)');
+    row.append(k, h('span', '', r.label), h('b', '', r.value));
+    tip.appendChild(row);
+  });
+  if (sum) { const s = h('div', 'tsum'); s.append(h('span', '', sum[0]), h('span', '', sum[1])); tip.appendChild(s); }
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + 'px';
+  tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip() { tip.hidden = true; }
+function tipOnFocus(el, fn) {
+  el.addEventListener('focus', () => { const r = el.getBoundingClientRect(); fn({ clientX: r.right, clientY: r.top }); });
+  el.addEventListener('blur', hideTip);
+}
+
+/* ================= 整體態勢 ================= */
+let lastThreat = null;
+function renderThreat() {
+  const t = threat();
+  const lv = levelOf(t.total);
+  const host = $('#gauge');
+  host.textContent = '';
+  const svg = svgEl('svg', { viewBox: '0 0 260 150', role: 'img', 'aria-label': '威脅指數 ' + t.total + '，等級' + lv.name }, host);
+  const arc = 'M30 130 A100 100 0 0 1 230 130';
+  svgEl('path', { d: arc, class: 'g-track' }, svg);
+  const L = Math.PI * 100;
+  const val = svgEl('path', { d: arc, class: 'g-val', style: 'stroke:' + lv.c, 'stroke-dasharray': L.toFixed(2), 'stroke-dashoffset': ((1 - (lastThreat == null ? 0 : lastThreat) / 100) * L).toFixed(2) }, svg);
+  [30, 55, 75].forEach(v => {
+    const a = Math.PI * (1 - v / 100);
+    svgEl('line', { x1: 130 + Math.cos(a) * 112, y1: 130 - Math.sin(a) * 112, x2: 130 + Math.cos(a) * 120, y2: 130 - Math.sin(a) * 120, class: 'g-tick' }, svg);
+  });
+  const num = svgEl('text', { x: 130, y: 120, 'text-anchor': 'middle', class: 'g-num' }, svg);
+  num.textContent = t.total;
+  const of = svgEl('text', { x: 130, y: 140, 'text-anchor': 'middle', class: 'g-of' }, svg);
+  of.textContent = '/ 100';
+  requestAnimationFrame(() => requestAnimationFrame(() => val.setAttribute('stroke-dashoffset', ((1 - t.total / 100) * L).toFixed(2))));
+  lastThreat = t.total;
+  const lvEl = $('#level');
+  lvEl.textContent = '';
+  lvEl.style.setProperty('--lc', lv.c);
+  lvEl.append(useIcon(lv.icon), document.createTextNode('威脅等級：' + lv.name));
+  const ul = $('#factors');
+  ul.textContent = '';
+  const base = h('li', 'factor');
+  const bt = h('span', 'ft'); const bi = h('i'); bi.style.width = '60%'; bt.appendChild(bi);
+  base.append(h('span', '', '基準值'), bt, h('b', '', '12'));
+  ul.appendChild(base);
+  t.f.forEach(x => {
+    const li = h('li', 'factor' + (x.hot ? ' hot' : ''));
+    const tr = h('span', 'ft'); const i = h('i'); i.style.width = Math.min(100, x.v / 20 * 100) + '%'; tr.appendChild(i);
+    li.append(h('span', '', x.t), tr, h('b', '', '+' + x.v));
+    ul.appendChild(li);
+  });
+}
+function sparkSVG(values, opts) {
+  const W = 200, H = 34;
+  const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
+  const min = Math.min(...values), max = Math.max(...values);
+  const sx = i => 3 + i * (W - 10) / Math.max(1, values.length - 1);
+  const sy = v => H - 4 - (max === min ? .5 : (v - min) / (max - min)) * (H - 10);
+  const pts = values.map((v, i) => sx(i).toFixed(1) + ',' + sy(v).toFixed(1));
+  svgEl('polygon', { points: sx(0) + ',' + H + ' ' + pts.join(' ') + ' ' + sx(values.length - 1) + ',' + H, style: 'fill:' + opts.c + ';opacity:.1' }, svg);
+  svgEl('polyline', { points: pts.join(' '), style: 'fill:none;stroke:' + opts.c + ';stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round' }, svg);
+  return svg;
+}
+function renderTiles() {
+  const n = S.range;
+  const cur = alertTotal(n), prev = alertTotal(n, n);
+  const pct = Math.round((cur / prev - 1) * 100);
+  const daily = [];
+  for (let i = DAYS - n; i < DAYS; i++) daily.push(SOURCES.reduce((a, _, k) => a + ALERTS[k][i], 0));
+  const vv = vulns();
+  const tiles = [
+    { label: '待處置情資', val: pendingCount(), unit: '筆', d: drillOn() ? '+3' : '+2', dir: 'bad', spark: [3, 4, 4, 5, 4, pendingCount()], hot: drillOn() },
+    { label: 'P1／P2 未修補弱點', val: vv[0].on + vv[0].od + vv[1].on + vv[1].od, unit: '個', d: drillConfirmed() ? '−2' : '−3', dir: 'good', spark: [14, 13, 12, 12, 11, 9 + (drillConfirmed() ? 1 : 0)], hot: drillConfirmed() },
+    { label: '逾期未修補弱點', val: overdueCount(), unit: '項', d: '+1', dir: 'bad', spark: [5, 6, 6, 5, 6, 7] },
+    { label: '內部告警（' + (n === 7 ? '近 7 天' : n === 30 ? '近 30 天' : '近 90 天') + '）', val: fmtN(cur), unit: '筆', d: (pct >= 0 ? '+' : '−') + Math.abs(pct) + '%', dir: pct > 0 ? 'bad' : 'good', spark: daily }
+  ];
+  const host = $('#cKpis');
+  host.textContent = '';
+  tiles.forEach(t => {
+    const el = h('div', 'tile' + (t.hot ? ' flash' : ''));
+    el.appendChild(h('span', 't-label', t.label));
+    const v = h('span', 't-val', String(t.val));
+    v.appendChild(h('small', '', t.unit));
+    el.appendChild(v);
+    const d = h('span', 't-delta ' + (t.dir === 'bad' ? 'd-bad' : 'd-good'));
+    d.append(useIcon(t.d.startsWith('+') ? 'i-up' : 'i-down'), document.createTextNode(t.d), h('span', '', '較前期'));
+    el.appendChild(d);
+    const sp = h('div', 'spark');
+    sp.appendChild(sparkSVG(t.spark, { c: t.dir === 'bad' ? 'var(--serious)' : 'var(--s1)' }));
+    el.appendChild(sp);
+    host.appendChild(el);
+  });
+}
+let briefRun = 0;
+function briefText() {
+  const today = SOURCES.reduce((a, _, k) => a + ALERTS[k][DAYS - 1], 0);
+  let avg = 0;
+  for (let i = DAYS - 8; i < DAYS - 1; i++) avg += SOURCES.reduce((a, _, k) => a + ALERTS[k][i], 0);
+  avg /= 7;
+  const pct = Math.round((today / avg - 1) * 100);
+  const extNew = EXT.reduce((a, s) => a + s[DAYS - 1], 0) + (drillOn() ? 1 : 0);
+  const t = threat();
+  const lv = levelOf(t.total);
+  const ext = S.stage >= 1 && S.stage <= 3
+    ? '① 外部：新增重大情資「A 廠牌 SSL VPN 零時差漏洞」，影響 2 台對外 VPN，已啟動應變。'
+    : '① 外部：新增 ' + extNew + ' 則情資，其中 2 則與本公司相關；最需注意 Chrome 零時差漏洞（KEV），員工電腦更新中。';
+  return [
+    ext,
+    '② 內部：今日告警 ' + fmtN(today) + ' 筆，較 7 日平均 ' + (pct >= 0 ? '+' : '−') + Math.abs(pct) + '%；AD 登入失敗仍偏高，建議檢查帳號鎖定與 MFA。',
+    '③ 脆弱性：P1 弱點 ' + p1Open() + ' 個未修補，逾期弱點共 ' + overdueCount() + ' 項；組態檢核已逾期 5 天。',
+    '建議：今日處置會議聚焦「' + (drillOn() ? 'SSL VPN 應變與通報評估' : 'AD 權限提升修補與帳號防護') + '」。威脅指數 ' + t.total + '（' + lv.name + '）。'
+  ].join('\n');
+}
+async function renderBrief(instant) {
+  const my = ++briefRun;
+  const el = $('#briefText');
+  const d = new Date();
+  $('#briefDate').textContent = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' 08:00 自動產生';
+  const text = briefText();
+  if (instant || reduce) { el.textContent = text; return; }
+  el.textContent = '';
+  const caret = h('span', 'caret');
+  const node = document.createTextNode('');
+  el.append(node, caret);
+  for (let n = 1; n <= text.length; n++) {
+    if (my !== briefRun) return;
+    node.textContent = text.slice(0, n);
+    await sleep(12);
+  }
+  caret.remove();
+}
+
+/* ================= 內部情資 ================= */
+function trendData() {
+  const n = S.range;
+  const series = SOURCES.map((s, k) => ({ name: s.name, c: s.c, values: [] }));
+  const labels = [], full = [], idx = [];
+  if (n <= 30) {
+    for (let i = DAYS - n; i < DAYS; i++) {
+      const d = dayDate(i);
+      labels.push(md(d));
+      full.push(md(d) + '（週' + WD[d.getDay()] + '）');
+      idx.push([i, i]);
+      SOURCES.forEach((_, k) => series[k].values.push(ALERTS[k][i]));
+    }
+  } else {
+    for (let s0 = DAYS - 91; s0 < DAYS; s0 += 7) {
+      const a = dayDate(s0), b = dayDate(s0 + 6);
+      labels.push(md(a));
+      full.push(md(a) + '～' + md(b) + ' 週合計');
+      idx.push([s0, s0 + 6]);
+      SOURCES.forEach((_, k) => { let v = 0; for (let i = s0; i <= s0 + 6; i++) v += ALERTS[k][i]; series[k].values.push(v); });
+    }
+  }
+  return { labels, full, idx, series };
+}
+function roundTop(x, y, w, hh, r) {
+  return 'M' + x + ' ' + (y + hh) + 'V' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + r) + 'V' + (y + hh) + 'Z';
+}
+function renderTrend() {
+  const d = trendData();
+  $('#trendSub').textContent = S.range <= 30 ? '每日告警數，依來源堆疊' : '每週告警數，依來源堆疊';
+  const lg = $('#lgTrend');
+  lg.textContent = '';
+  d.series.forEach(s => { const sp = h('span'); const i = h('i'); i.style.setProperty('--c', s.c); sp.append(i, document.createTextNode(s.name)); lg.appendChild(sp); });
+  const host = $('#chTrend');
+  host.textContent = '';
+  const W = Math.max(300, host.clientWidth || 600), H = 250;
+  const m = { l: 42, r: 10, t: 26, b: 26 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const n = d.labels.length;
+  const tot = d.labels.map((_, i) => d.series.reduce((a, s) => a + s.values[i], 0));
+  const peak = Math.max(...tot);
+  const max = niceMax(peak);
+  const band = pw / n;
+  const bw = Math.max(2, Math.min(24, band * .7));
+  const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': '內部告警趨勢，共 ' + n + ' 個時間點，最高 ' + peak + ' 筆。可切換表格檢視。' }, host);
+  for (let k = 0; k <= 4; k++) {
+    const v = max * k / 4, y = m.t + ph - v / max * ph;
+    svgEl('line', { x1: m.l, x2: W - m.r, y1: y, y2: y, class: k ? 'gridl' : 'basel' }, svg);
+    svgEl('text', { x: m.l - 6, y: y + 4, 'text-anchor': 'end', class: 'axis-t' }, svg).textContent = fmt(v);
+  }
+  const cols = [];
+  for (let i = 0; i < n; i++) {
+    const x = m.l + i * band + (band - bw) / 2;
+    const g = svgEl('g', {}, svg);
+    cols.push(g);
+    const nz = d.series.map((s, si) => ({ si, v: s.values[i] })).filter(o => o.v > 0);
+    let yb = m.t + ph;
+    nz.forEach((o, j) => {
+      const hh = o.v / max * ph;
+      const gap = j > 0 ? 2 : 0;
+      const segH = hh - gap;
+      const y = yb - hh;
+      if (segH > .5) {
+        if (j === nz.length - 1) svgEl('path', { d: roundTop(x, y, bw, segH, Math.min(4, bw / 2, segH)), style: 'fill:' + d.series[o.si].c }, g);
+        else svgEl('rect', { x, y, width: bw, height: segH, style: 'fill:' + d.series[o.si].c }, g);
+      }
+      yb -= hh;
+    });
+  }
+  const step = Math.ceil(n / (W < 560 ? 4 : 8));
+  for (let i = n - 1; i >= 0; i -= step) {
+    svgEl('text', { x: m.l + i * band + band / 2, y: H - 8, 'text-anchor': 'middle', class: 'axis-t' }, svg).textContent = i === n - 1 && S.range <= 30 ? '今天' : d.labels[i];
+  }
+  const pi = tot.indexOf(peak);
+  const ev = EVENTS.find(e => e.day >= d.idx[pi][0] - 1 && e.day <= d.idx[pi][1] + 1);
+  if (ev) {
+    const cx = m.l + pi * band + band / 2;
+    const ty = m.t + ph - peak / max * ph;
+    const lx = Math.min(W - m.r - 50, Math.max(m.l + 50, cx));
+    svgEl('line', { x1: cx, x2: cx, y1: ty - 3, y2: m.t - 6, class: 'anno-l' }, svg);
+    svgEl('text', { x: lx, y: m.t - 10, 'text-anchor': 'middle', class: 'anno' }, svg).textContent = '尖峰：' + ev.label;
+  }
+  for (let i = 0; i < n; i++) {
+    const hit = svgEl('rect', { x: m.l + i * band, y: m.t, width: band, height: ph, style: 'fill:transparent' }, svg);
+    hit.addEventListener('pointermove', e => {
+      cols.forEach((c, j) => c.setAttribute('opacity', j === i ? 1 : .35));
+      showTip(e, d.full[i], d.series.map(s => ({ c: s.c, label: s.name, value: fmtN(s.values[i]) })).reverse(), ['合計', fmtN(tot[i])]);
+    });
+  }
+  svg.addEventListener('pointerleave', () => { cols.forEach(c => c.removeAttribute('opacity')); hideTip(); });
+  if (!$('#tb-trend').hidden) renderTable('trend');
+}
+function renderRank() {
+  const n = S.range;
+  const rows = ALERT_TYPES.map(a => {
+    const cur = Math.round(rangeSum(ALERTS[a.src], n) * a.share * (n <= 7 ? a.boost * .8 + .2 : 1));
+    const prev = Math.round(rangeSum(ALERTS[a.src], n, n) * a.share);
+    return Object.assign({ cur, pct: Math.round((cur / Math.max(1, prev) - 1) * 100) }, a);
+  }).sort((a, b) => b.cur - a.cur);
+  const max = rows[0].cur;
+  const host = $('#rank');
+  host.textContent = '';
+  rows.forEach(r => {
+    const row = h('div', 'rank-row');
+    const left = h('div');
+    left.append(h('b', '', r.t), h('small', '', SOURCES[r.src].name + '・'));
+    left.lastChild.appendChild(chip(r.st[0], r.st[1], r.st[2]));
+    const bar = h('div', 'rb'); const bi = h('i'); bi.style.width = (r.cur / max * 100) + '%'; bar.appendChild(bi); left.appendChild(bar);
+    const tr = h('span', 'rt ' + (r.pct > 5 ? 'd-bad' : r.pct < -5 ? 'd-good' : 'd-flat'), (r.pct > 0 ? '▲ ' : r.pct < 0 ? '▼ ' : '') + Math.abs(r.pct) + '%');
+    tr.title = '較前一期';
+    row.append(left, h('span', 'rc', fmtN(r.cur)), tr);
+    host.appendChild(row);
+  });
+}
+function renderTicker() {
+  const base = [
+    ['FW', 'DENY 203.0.113.45 → 10.10.1.20:3389', '×142'], ['AD', '4625 登入失敗 account=svc_backup', '×27'],
+    ['EDR', '可疑 PowerShell 編碼指令 host=PC-FIN-07', ''], ['VPN', '非上班時段登入 02:13', '來源國家異常'],
+    ['WAF', '攔截 SQL Injection /api/login 198.51.100.23', ''], ['DLP', '大量個資外寄 rows=12,480', '調查中'],
+    ['M365', '異地登入，MFA 拒絕', ''], ['門禁', '機房 22:47 非排班人員進出', '']
+  ];
+  const lines = drillOn() ? [['NICS', 'A 廠牌 SSL VPN 零時差漏洞已遭利用', '重大', 1], ['VPN', '異常管理介面存取 198.51.100.77', '已阻擋', 1]].concat(base) : base;
+  const tr = $('#tickerTrack');
+  tr.textContent = '';
+  for (let r = 0; r < 2; r++) lines.forEach(l => {
+    const sp = h('span', l[3] ? 'alarm' : '');
+    sp.append(h('b', '', l[0]), document.createTextNode(l[1] + ' '));
+    if (l[2]) sp.appendChild(h('i', '', l[2]));
+    tr.appendChild(sp);
+  });
+}
+
+/* ================= 外部情資 ================= */
+function hbarRows(host, items, color, valueNode, tipFn) {
+  host.textContent = '';
+  const max = Math.max(...items.map(i => i.v));
+  items.forEach(it => {
+    const row = h('div', 'hb');
+    const t = h('div', 'ht'); const i = h('i'); i.style.width = (it.v / max * 100) + '%'; i.style.setProperty('--bc', color); t.appendChild(i);
+    const v = h('span', 'hv');
+    valueNode(v, it);
+    row.append(h('span', 'hl', it.label), t, v);
+    row.addEventListener('pointermove', e => tipFn(e, it));
+    row.addEventListener('pointerleave', hideTip);
+    host.appendChild(row);
+  });
+}
+function sourcesData() { return EXT_SRC.map((s, k) => ({ label: s.name, v: rangeSum(EXT[k], S.range) })).sort((a, b) => b.v - a.v); }
+function funnelData() {
+  const c = EXT.reduce((a, s) => a + rangeSum(s, S.range), 0) + (S.stage >= 1 ? 1 : 0);
+  const act = Math.max(4, Math.round(c * .055)) + (S.stage >= 1 ? 1 : 0);
+  const closed = Math.round((act - (S.stage >= 1 ? 1 : 0)) * .72) + (S.stage === 4 ? 1 : 0);
+  return [
+    { label: '蒐集', v: c }, { label: '去重整理後', v: Math.round(c * .74) }, { label: '與資產相關', v: Math.round(c * .16) + (S.stage >= 1 ? 1 : 0) },
+    { label: '需建立處置', v: act }, { label: '已結案', v: closed }
+  ];
+}
+function renderSources() {
+  const items = sourcesData();
+  const total = items.reduce((a, i) => a + i.v, 0);
+  $('#srcSub').textContent = '期間內蒐集 ' + fmtN(total) + ' 則';
+  hbarRows($('#sources'), items, 'var(--ext)', (v, it) => { v.textContent = fmtN(it.v); },
+    (e, it) => showTip(e, it.label, [{ c: 'var(--ext)', label: '則數', value: fmtN(it.v) }, { label: '占比', value: Math.round(it.v / total * 100) + '%' }]));
+  if (!$('#tb-sources').hidden) renderTable('sources');
+}
+function renderFunnel() {
+  const st = funnelData();
+  hbarRows($('#funnel'), st, 'var(--ext)', (v, it) => {
+    const i = st.indexOf(it);
+    v.textContent = fmtN(it.v);
+    v.appendChild(h('small', '', i ? '前一階段的 ' + Math.round(it.v / st[i - 1].v * 100) + '%' : '100%'));
+  }, (e, it) => showTip(e, it.label, [{ c: 'var(--ext)', label: '則數', value: fmtN(it.v) }, { label: '占蒐集總數', value: Math.round(it.v / st[0].v * 100) + '%' }]));
+  if (!$('#tb-funnel').hidden) renderTable('funnel');
+}
+function renderFeed() {
+  const ul = $('#feed');
+  ul.textContent = '';
+  feedItems().forEach(f => {
+    const li = h('li', 'fi' + (f.drill && S.stage >= 1 && S.stage <= 3 ? ' new' : '') + (f.rel ? '' : ' nr'));
+    const top = h('div', 'fi-top');
+    top.append(h('span', 'src', f.src), document.createTextNode(f.d === 0 ? '今天' : f.d === 1 ? '昨天' : f.d + ' 天前'));
+    const tags = h('div', 'fi-tags');
+    tags.appendChild(chip(f.rel ? '相關：' + f.rel : '不相關：未使用該產品', f.rel ? 'var(--int)' : 'var(--muted)'));
+    tags.appendChild(chip('威脅：' + LV[f.lv].name, LV[f.lv].c, f.lv === 'crit' || f.lv === 'high' ? 'i-warn' : null));
+    tags.appendChild(chip(f.st, ST_COLOR[f.st] || 'var(--dim)', f.st === '已結案' || f.st === '已歸檔' ? 'i-check' : null));
+    li.append(top, h('b', '', f.t), tags);
+    ul.appendChild(li);
+  });
+}
+
+/* ================= 脆弱性 ================= */
+function renderSla() {
+  const vv = vulns();
+  const max = Math.max(...vv.map(v => v.on + v.od));
+  const host = $('#sla');
+  host.textContent = '';
+  vv.forEach(v => {
+    const row = h('div', 'sla-row');
+    const pc = h('span', 'pc p' + v.p, 'P' + v.p);
+    const stk = h('div', 'stk');
+    if (v.on) { const a = h('i', 'on'); a.style.width = (v.on / max * 100) + '%'; stk.appendChild(a); }
+    if (v.od) { const b = h('i', 'od'); b.style.width = (v.od / max * 100) + '%'; stk.appendChild(b); }
+    const sv = h('span', 'sv');
+    sv.append(h('b', '', String(v.on + v.od)), document.createTextNode(' 個'));
+    if (v.od) sv.appendChild(h('small', '', '逾期 ' + v.od));
+    row.append(pc, stk, sv);
+    row.addEventListener('pointermove', e => showTip(e, 'P' + v.p + ' 弱點', [{ c: 'var(--s1)', label: '期限內', value: String(v.on) }, { c: 'var(--crit)', label: '已逾期', value: String(v.od) }], ['合計', String(v.on + v.od)]));
+    row.addEventListener('pointerleave', hideTip);
+    host.appendChild(row);
+  });
+  const rate = SLA_RATE[S.range];
+  const ok = rate >= 95;
+  const m = $('#slaMeter');
+  m.textContent = '';
+  m.style.setProperty('--mc', ok ? 'var(--good)' : 'var(--warn)');
+  const top = h('div', 'meter-top');
+  const l = h('span', '', '高風險弱點 SLA 內修補率');
+  const r = h('span');
+  r.append(h('b', '', rate + '%'), document.createTextNode(ok ? '　達標' : '　未達目標 95%'));
+  top.append(l, r);
+  const tr = h('div', 'mtrack'); const fi = h('i'); fi.style.width = rate + '%'; const tg = h('span', 'tgt'); tg.style.left = '95%'; tr.append(fi, tg);
+  const lb = h('div', 'mlabels'); lb.append(h('span', '', '0%'), h('span', '', '目標 95%'));
+  m.append(top, tr, lb);
+  if (!$('#tb-sla').hidden) renderTable('sla');
+}
+function relDate(off) { const d = new Date(TODAY); d.setDate(d.getDate() + off); return md(d); }
+function renderCal() {
+  const host = $('#cal');
+  host.textContent = '';
+  CAL.forEach(c => {
+    const row = h('div', 'cal-row');
+    const left = h('div');
+    left.appendChild(h('b', '', c.t + '・' + c.f));
+    const info = c.custom || ('上次 ' + relDate(c.last) + '・' + (c.next < 0 ? '應於 ' + relDate(c.next) + ' 執行' : '下次 ' + relDate(c.next)));
+    left.appendChild(h('small', '', info + (c.note ? '・' + c.note : '')));
+    row.append(left, chip(c.st[0], c.st[1], c.st[2]));
+    host.appendChild(row);
+  });
+}
+function renderAssets() {
+  const list = (drillConfirmed() ? [DRILL_ASSET] : []).concat(ASSETS).sort((a, b) => b.s - a.s);
+  const host = $('#assets');
+  host.textContent = '';
+  list.forEach(a => {
+    const row = h('div', 'as-row' + (a.drill ? ' new' : ''));
+    const left = h('div');
+    left.appendChild(h('b', '', a.t));
+    const tags = h('div', 'as-tags');
+    a.tags.forEach(t => tags.appendChild(h('span', 'tg', t)));
+    if (a.kev) tags.appendChild(h('span', 'tg kev', 'KEV'));
+    tags.appendChild(h('span', 'tg', a.v));
+    left.appendChild(tags);
+    const sb = h('div', 'sb'); const si = h('i'); si.style.width = a.s + '%'; sb.appendChild(si); left.appendChild(sb);
+    row.append(left, h('span', 'sc', String(a.s)));
+    row.title = '風險評分 ' + a.s + ' / 100';
+    host.appendChild(row);
+  });
+}
+
+/* ================= 風險處置與成效 ================= */
+const riskLv = s => s >= 20 ? 'crit' : s >= 12 ? 'high' : s >= 6 ? 'mid' : s >= 3 ? 'low' : 'none';
+function risks() { return RISKS.concat(drillOn() ? [DRILL_RISK] : []); }
+function renderMatrix() {
+  const host = $('#mx');
+  host.textContent = '';
+  const all = risks();
+  for (let L = 5; L >= 1; L--) {
+    for (let I = 1; I <= 5; I++) {
+      const items = all.filter(r => r.L === L && r.I === I);
+      const c = h('div', 'mc ' + riskLv(L * I) + (items.length ? '' : ' zero') + (items.some(r => r.drill) && drillConfirmed() ? ' pop' : ''), items.length ? String(items.length) : '');
+      if (items.length) {
+        c.tabIndex = 0;
+        c.setAttribute('aria-label', '可能性 ' + L + '，衝擊 ' + I + '，' + items.length + ' 筆');
+        const show = e => showTip(e, '可能性 ' + L + ' × 衝擊 ' + I + ' = ' + L * I + '（' + LV[riskLv(L * I)].name + '）', items.map(r => ({ c: LV[riskLv(L * I)].c, label: r.t, value: '' })));
+        c.addEventListener('pointermove', show);
+        c.addEventListener('pointerleave', hideTip);
+        tipOnFocus(c, show);
+      }
+      host.appendChild(c);
+    }
+  }
+  if (!$('#tb-matrix').hidden) renderTable('matrix');
+}
+function renderTickets() {
+  const open = 4 + (drillOn() ? 1 : 0);
+  const closed = CLOSED[S.range] + (S.stage === 4 ? 1 : 0);
+  const stats = [
+    { l: '待處理', v: open, i: 'i-clock' }, { l: '處理中', v: 7, i: 'i-auto' },
+    { l: '已逾期', v: OVERDUE.length, i: 'i-warn', od: true }, { l: '期間內已結案', v: closed, i: 'i-check' }
+  ];
+  const host = $('#tkStats');
+  host.textContent = '';
+  stats.forEach(s => {
+    const d = h('div', 'tk' + (s.od ? ' od' : '') + (s.l === '待處理' && drillOn() ? ' flash' : ''));
+    const lab = h('span');
+    lab.append(useIcon(s.i), document.createTextNode(s.l));
+    d.append(lab, h('b', '', String(s.v)));
+    host.appendChild(d);
+  });
+  const ul = $('#odList');
+  ul.textContent = '';
+  OVERDUE.forEach(o => {
+    const li = h('li');
+    const l = h('div');
+    l.append(document.createTextNode(o.t), h('small', '', '負責：' + o.o));
+    li.append(l, h('span', 'od-d', '逾期 ' + o.d + ' 天'));
+    ul.appendChild(li);
+  });
+}
+function renderKpi() {
+  const host = $('#kpis');
+  host.textContent = '';
+  KPI.forEach(k => {
+    const box = h('div', 'kpi');
+    const cur = k.v[k.v.length - 1];
+    const met = k.lower ? cur <= k.target : cur >= k.target;
+    const top = h('div', 'kpi-top');
+    const val = h('b', '', String(cur));
+    val.appendChild(h('small', '', k.unit));
+    top.append(h('span', '', k.t), val);
+    box.appendChild(top);
+    host.appendChild(box);
+    const W = Math.max(160, box.clientWidth || 260), H = 84;
+    const m = { l: 4, r: 30, t: 12, b: 16 };
+    const vals = k.v.concat([k.target]);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    const padv = (hi - lo) * .15 || 1;
+    lo -= padv; hi += padv;
+    const sx = i => m.l + i * (W - m.l - m.r) / (k.v.length - 1);
+    const sy = v => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+    const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': k.t + '：' + MONTHS.map((mm, i) => mm + ' ' + k.v[i]).join('、') + '；目標 ' + k.target }, box);
+    svgEl('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'basel' }, svg);
+    const ty = sy(k.target);
+    svgEl('line', { x1: m.l, x2: W - m.r, y1: ty, y2: ty, class: 'tgt-l' }, svg);
+    svgEl('text', { x: m.l + 2, y: ty - 4, class: 'tgt-t' }, svg).textContent = '目標 ' + k.target;
+    const pts = k.v.map((v, i) => sx(i).toFixed(1) + ',' + sy(v).toFixed(1));
+    svgEl('polygon', { points: sx(0) + ',' + (H - m.b) + ' ' + pts.join(' ') + ' ' + sx(k.v.length - 1) + ',' + (H - m.b), class: 'area-s' }, svg);
+    svgEl('polyline', { points: pts.join(' '), class: 'line-s' }, svg);
+    const ex = sx(k.v.length - 1), ey = sy(cur);
+    svgEl('circle', { cx: ex, cy: ey, r: 4.5, class: 'dot-s' }, svg);
+    svgEl('text', { x: ex + 7, y: ey + 4, class: 'end-t' }, svg).textContent = String(cur);
+    svgEl('text', { x: sx(0), y: H - 3, class: 'axis-t' }, svg).textContent = MONTHS[0];
+    svgEl('text', { x: ex, y: H - 3, 'text-anchor': 'end', class: 'axis-t' }, svg).textContent = MONTHS[5];
+    k.v.forEach((v, i) => {
+      const hit = svgEl('rect', { x: sx(i) - 14, y: 0, width: 28, height: H, style: 'fill:transparent' }, svg);
+      hit.addEventListener('pointermove', e => showTip(e, k.t + '・' + MONTHS[i], [{ c: 'var(--s1)', label: '實際', value: v + ' ' + k.unit }, { label: '目標', value: k.target + ' ' + k.unit }]));
+      hit.addEventListener('pointerleave', hideTip);
+    });
+    const foot = h('div', 'kpi-foot');
+    const diff = +(cur - k.v[0]).toFixed(1);
+    foot.append(h('span', '', '6 個月 ' + (diff > 0 ? '+' : '−') + Math.abs(diff) + ' ' + k.unit), chip(met ? '達標' : '未達標', met ? 'var(--good)' : 'var(--warn)', met ? 'i-check' : 'i-warn'));
+    box.appendChild(foot);
+  });
+  if (!$('#tb-kpi').hidden) renderTable('kpi');
+}
+
+/* ================= 表格檢視 ================= */
+const TABLE_FOR = { trend: '#chTrend', sources: '#sources', funnel: '#funnel', sla: '#sla', matrix: '.matrix', kpi: '#kpis' };
+function tableData(id) {
+  if (id === 'trend') { const d = trendData(); return { head: ['期間'].concat(d.series.map(s => s.name), ['合計']), rows: d.full.map((f, i) => [f].concat(d.series.map(s => fmtN(s.values[i])), [fmtN(d.series.reduce((a, s) => a + s.values[i], 0))])) }; }
+  if (id === 'sources') { const it = sourcesData(); const t = it.reduce((a, i) => a + i.v, 0); return { head: ['來源', '則數', '占比'], rows: it.map(i => [i.label, fmtN(i.v), Math.round(i.v / t * 100) + '%']) }; }
+  if (id === 'funnel') { const st = funnelData(); return { head: ['階段', '則數', '占蒐集總數'], rows: st.map(s => [s.label, fmtN(s.v), Math.round(s.v / st[0].v * 100) + '%']) }; }
+  if (id === 'sla') return { head: ['優先序', '期限內', '已逾期', '合計'], rows: vulns().map(v => ['P' + v.p, v.on, v.od, v.on + v.od]) };
+  if (id === 'matrix') return { head: ['未結案情資', '可能性', '衝擊', '分數', '等級'], rows: risks().map(r => [r.t, r.L, r.I, r.L * r.I, LV[riskLv(r.L * r.I)].name]).sort((a, b) => b[3] - a[3]) };
+  return { head: ['月份'].concat(KPI.map(k => k.t + '（' + k.unit + '）')), rows: MONTHS.map((mm, i) => [mm].concat(KPI.map(k => k.v[i]))) };
+}
+function renderTable(id) {
+  const box = $('#tb-' + id);
+  const d = tableData(id);
+  box.textContent = '';
+  const t = h('table');
+  const th = h('thead'); const tr = h('tr');
+  d.head.forEach(x => tr.appendChild(h('th', '', String(x))));
+  th.appendChild(tr); t.appendChild(th);
+  const tb = h('tbody');
+  d.rows.forEach(r => { const row = h('tr'); r.forEach(x => row.appendChild(h('td', '', String(x)))); tb.appendChild(row); });
+  t.appendChild(tb);
+  box.appendChild(t);
+}
+function toggleTable(btn) {
+  const id = btn.dataset.table;
+  const box = $('#tb-' + id);
+  const on = box.hidden;
+  box.hidden = !on;
+  $(TABLE_FOR[id], btn.closest('.card')).hidden = on;
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (on) renderTable(id);
+}
+
+function renderAll(opts) {
+  renderThreat();
+  renderTiles();
+  renderBrief(opts && opts.instantBrief);
+  renderTrend();
+  renderRank();
+  renderTicker();
+  renderSources();
+  renderFunnel();
+  renderFeed();
+  renderSla();
+  renderCal();
+  renderAssets();
+  renderMatrix();
+  renderTickets();
+  renderKpi();
+}
+
+/* ================= 語音 ================= */
+const audio = new Audio();
+audio.preload = 'auto';
+let voiceOn = true;
+let voiceStop = null;
+let audioReady = false;
+function stopVoice() {
+  try { audio.pause(); } catch (e) { /* 忽略 */ }
+  if (voiceStop) { const f = voiceStop; voiceStop = null; f(); }
+}
+function playClip(src) {
+  return new Promise((resolve, reject) => {
+    const done = () => { if (voiceStop === done) voiceStop = null; resolve(); };
+    voiceStop = done;
+    audio.onended = done;
+    audio.onerror = () => { if (voiceStop === done) voiceStop = null; reject(new Error('audio')); };
+    audio.src = src;
+    const p = audio.play();
+    if (p && p.catch) p.catch(err => { if (voiceStop === done) voiceStop = null; reject(err); });
+  });
+}
+function unlockAudio() {
+  if (audioReady) return;
+  audioReady = true;
+  const first = Object.values(AUD)[0];
+  if (!first) return;
+  try {
+    audio.muted = true;
+    audio.src = first.src;
+    const p = audio.play();
+    if (p && p.then) p.then(() => { if (!voiceStop) audio.pause(); audio.muted = false; }).catch(() => { audio.muted = false; });
+  } catch (e) { audio.muted = false; }
+}
+let sayId = 0;
+async function say(who, face, text, clip) {
+  const my = ++sayId;
+  stopVoice();
+  const c = clip ? AUD[clip] : null;
+  const ms = c ? c.dur * 1000 : 900 + text.length * 110;
+  const fc = $('#drFace');
+  fc.className = 'dr-face ' + who + ' talk';
+  $('#drImg').src = SPR[who][face] || Object.values(SPR[who])[0];
+  const b = $('#drBubble');
+  b.className = 'bubble ' + who;
+  $('#drName').textContent = who === 'allan' ? 'Allan 顧問' : 'AI 助理 阿拉蕾';
+  $('#srLine').textContent = (who === 'allan' ? 'Allan 顧問：' : '阿拉蕾：') + text;
+  const el = $('#drText');
+  (async () => {
+    if (reduce) { el.textContent = text; return; }
+    const step = Math.max(14, Math.min(70, ms * .8 / text.length));
+    for (let n = 1; n <= text.length; n++) { if (my !== sayId) return; el.textContent = text.slice(0, n); await sleep(step); }
+  })();
+  if (voiceOn && c && audioReady) { try { await playClip(c.src); } catch (e) { await sleep(ms); } }
+  else await sleep(ms);
+  if (my === sayId) fc.classList.remove('talk');
+}
+async function sayGroup(group, token) {
+  const lines = VOICE[group] || [];
+  for (let i = 0; i < lines.length; i++) {
+    if (token !== T.token) return;
+    await say(lines[i][0], lines[i][1], lines[i][2], group + '_' + pad(i + 1));
+    if (token !== T.token) return;
+    await sleep(250);
+  }
+}
+
+/* ================= 導覽與演練內容 ================= */
+const TOUR = [
+  { voice: 'welcome', title: '歡迎進入 CTI 戰情室', targets: [],
+    look: '戰情室分成五個區域：整體態勢、內部情資、外部情資、脆弱性，以及風險處置與成效。上方可以切換近 7、30、90 天。',
+    mean: '情資作業的成果要「看得見」，管理階層與資安人員才能在同一個畫面上判斷風險、分配資源（ISO/IEC 27001:2022 A.5.7、A.8.8、條文 9.1）。',
+    act: ['每日早上由資安人員檢視一次並留下紀錄', '每週處置會議以戰情室為議程主軸', '每月把重點截圖納入資安工作月報'] },
+  { voice: 's_overview', title: '威脅指數與關鍵指標', targets: ['cThreat', 'cKpis'],
+    look: '威脅指數（0～100）由相關外部情資、重大情資、未修補 P1 弱點、逾期處置與告警異常加總；右側 KPI 顯示本期數量與較前期變化。',
+    mean: '讓管理階層一眼掌握「現在危不危險」。指數等級對應事件應變的啟動門檻，也是條文 9.1 監督與量測的具體做法。',
+    act: ['達「高」：當日召開處置會議，指派負責人與期限', '達「重大」：啟動事件應變程序（A.5.24～A.5.26）並評估通報', '待處置與逾期數量連續上升時，檢討處置人力與流程'] },
+  { voice: 's_brief', title: 'AI 晨報', targets: ['cBrief'],
+    look: 'AI 依過去 24 小時的告警、情資與弱點資料，自動整理三項重點與當日建議。',
+    mean: '縮短閱讀大量資料的時間，但 AI 可能誤判或遺漏，必須有人覆核，決策責任仍在組織。',
+    act: ['由資安人員覆核後再發布給主管', '機敏資料不送入未經核准的 AI 服務', '保留 AI 建議與人員決策紀錄，定期抽驗準確度'] },
+  { voice: 's_trend', title: '內部告警趨勢', targets: ['cTrend'],
+    look: '每日內部告警數，依網路設備、系統日誌、端點 EDR、使用者行為與人員通報五類來源堆疊；標註處是期間尖峰。',
+    mean: '尖峰代表可能的攻擊活動；某來源長期為零，可能是日誌沒有接上或設備故障，形成監控盲點（A.8.15 日誌、A.8.16 監控活動）。',
+    act: ['追查尖峰原因，必要時開立事件單', '定期確認日誌來源正常回傳、時間已同步（A.8.17）', '日誌保存期限符合法規與公司政策'] },
+  { voice: 's_alerts', title: '告警類型排行與即時告警', targets: ['cAlerts', 'ticker'],
+    look: '期間內最常見的告警類型、次數、較前期的變化與處理狀態；下方跑馬燈是即時告警（模擬）。',
+    mean: '反覆出現的告警指向控制措施的弱點，例如 AD 登入失敗暴增，代表帳號正被暴力破解。',
+    act: ['啟用帳號鎖定與多因素驗證（MFA）', '封鎖惡意來源 IP，必要時以 EDR 隔離端點', '調校高頻誤報規則，避免告警疲勞'] },
+  { voice: 's_funnel', title: '外部情資來源與相關性漏斗', targets: ['cSources', 'cFunnel'],
+    look: '左邊是各外部來源的情資數量；右邊漏斗顯示從蒐集、去重、比對資產、需處置到結案的轉換。',
+    mean: '漏斗呈現情資作業的篩選效率。相關比例偏低是正常的；但需處置的長期無法結案，代表處置能量不足（A.5.7 威脅情資）。',
+    act: ['維持資產清冊（CMDB）正確，才能準確比對', '不相關的情資也要記錄判斷理由', '每季檢討來源有效性，停用沒有價值的來源'] },
+  { voice: 's_feed', title: '最新外部情資', targets: ['cFeed'],
+    look: '最新情資的來源、與本公司的相關性、威脅程度與處置狀態。',
+    mean: '列入 KEV（已遭實際利用）且影響對外或核心系統的情資，風險最高、時間最緊迫。',
+    act: ['重大與高風險情資當日建立處置單', '同步更新 IoC 阻擋清單與偵測規則', '結果列入每月外部情資彙整紀錄'] },
+  { voice: 's_sla', title: '未修補弱點與修補期限', targets: ['cSla'],
+    look: '未修補弱點依 P1～P4 分類，藍色為期限內、紅色為已逾期；下方是高風險弱點 SLA 內修補率，對照目標 95%。',
+    mean: '逾期弱點代表風險持續暴露；SLA 修補率是 A.8.8 技術脆弱性管理有效性的關鍵指標。',
+    act: ['逾期項目升級到主管，列入週會追蹤', '無法立即修補時採取補償控制：WAF 虛擬修補、隔離、限制存取', '確實無法處理的，由風險擁有者簽核接受風險並定期覆核'] },
+  { voice: 's_cal', title: '檢測行事曆', targets: ['cCal'],
+    look: '弱點掃描、滲透測試、資安健診、原碼檢測、組態檢核與社交工程演練的上次執行、下次到期與狀態。',
+    mean: '確保脆弱性識別依計畫執行，符合資安責任等級或年度計畫的頻率要求；逾期就是稽核發現。',
+    act: ['即將到期的項目提前排程與編列預算', '滲透測試前取得授權並界定範圍（A.8.34）', '未做原碼檢測的系統暫緩上線或補做（A.8.29）'] },
+  { voice: 's_assets', title: '高風險資產', targets: ['cAssets'],
+    look: '依未修補弱點、是否列入 KEV、是否對外與資產重要性，綜合評分排序的系統。',
+    mean: '風險常集中在少數系統；對外又核心的系統一旦失守，影響範圍最大。',
+    act: ['優先修補並強化設定（GCB、CIS Benchmarks）', '網段隔離、限制管理介面存取', '停止支援的系統規劃汰換'] },
+  { voice: 's_matrix', title: '風險矩陣與處置單', targets: ['cMatrix', 'cTickets'],
+    look: '未結案情資依可能性 × 衝擊的分布；右邊是處置單的待處理、處理中、逾期與期間內已結案數量。',
+    mean: '右上角（高可能、高衝擊）需要立即處理；處置單是風險處理（條文 6.1.3、8.3）的執行證據。',
+    act: ['每張處置單指定負責人與期限', '結案前要有修補或緩解證據，以及複測結果', '逾期項目列入週會追蹤，必要時升級'] },
+  { voice: 's_kpi', title: '成效指標趨勢', targets: ['cKpi'],
+    look: '近 6 個月的平均偵測時間、高風險弱點平均修補天數、釣魚演練點擊率與重要日誌來源納管率，虛線是目標值。',
+    mean: '用來判斷情資與脆弱性管理是否真的變好，是條文 9.1 監督量測與 9.3 管理審查的輸入。',
+    act: ['設定目標值並每月追蹤', '趨勢變差時找出原因並採取矯正措施（條文 10.2）', '定期提報管理審查'] },
+  { voice: 'end', title: '導覽完成', targets: [],
+    look: '你已看完戰情室的五個區域。每個區塊右上角的「解讀」可以隨時再聽一次說明，「表格」可切換成數據表。',
+    mean: '戰情室的價值不在畫面，而在「看到之後做了什麼」。每個異常都要對應到負責人、行動與紀錄。',
+    act: ['每日：檢視威脅指數、最新情資與告警尖峰', '每週：追蹤處置單與逾期弱點', '每月：彙整情資紀錄與 KPI，納入月報與管理審查', '想看應變過程，可以按上方的「情境演練」'] }
+];
+const DRILL = [
+  { voice: 'd1', title: '演練 1／4・警報：重大漏洞來襲', targets: ['cFeed', 'cThreat'],
+    look: '最新外部情資出現「A 廠牌 SSL VPN 零時差漏洞，已遭利用」，威脅指數立刻上升，跑馬燈出現紅色告警。',
+    mean: '已遭實際利用的漏洞，攻擊可能在數小時內發生；來源是 NICS 並列入 KEV，可信度高。',
+    act: ['立即確認公司是否使用該產品與受影響版本', '通知資安長與系統負責人待命', '暫停該設備的非必要變更'] },
+  { voice: 'd2', title: '演練 2／4・比對資產：確認受影響', targets: ['cAssets', 'cMatrix', 'cSla'],
+    look: '資產清冊命中 2 台對外 SSL VPN：高風險資產新增一筆、P1 弱點 +1、風險矩陣右上角 +1。',
+    mean: '對外核心系統受影響，可能性 5 × 衝擊 5 = 25，威脅程度判定為重大。',
+    act: ['啟動事件應變程序（A.5.24～A.5.26）', '建立 P1 處置單，時限 72 小時', '依法規與契約評估是否需要通報'] },
+  { voice: 'd3', title: '演練 3／4・應變處置：先緩解、再修補、後複測', targets: ['cTickets', 'cAssets'],
+    look: '依時間軸執行應變措施，處置單持續更新進度。',
+    mean: '修補前先降低曝險，可以爭取時間；每一步都要留下紀錄，事後才能證明處置得宜。',
+    timeline: [['0～1 小時', '確認影響範圍，通知管理階層與系統負責人'], ['1～4 小時', '緩解：限制管理介面來源 IP、強制 MFA、阻擋已知 IoC'], ['4～24 小時', '套用原廠修補或韌體更新'], ['24～72 小時', '複測確認，檢視近 30 日 VPN 登入紀錄，處置單結案'], ['事後', '事件檢討（A.5.27）、更新風險評鑑、評估是否通報']] },
+  { voice: 'd4', title: '演練 4／4・處置完成：留下證據', targets: ['cThreat', 'cFeed', 'cTickets'],
+    look: '處置單結案，威脅指數回到演練前的水準，情資狀態更新為「已結案」。',
+    mean: '完整的處置紀錄就是稽核證據：情資來源、影響評估、處置過程、複測結果與結案。',
+    act: ['把本次事件納入每月外部情資彙整與資安月報', '檢討偵測與應變時間是否達標（MTTD、MTTR）', '重大事件提報管理審查（條文 9.3）'] }
+];
+
+/* ================= 導覽控制 ================= */
+const T = { mode: null, i: 0, auto: true, single: false, token: 0 };
+const drawer = $('#drawer');
+function steps() { return T.mode === 'drill' ? DRILL : TOUR; }
+function spotlight(ids) {
+  $$('.spot').forEach(e => e.classList.remove('spot'));
+  document.body.classList.toggle('touring', ids.length > 0);
+  ids.forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('spot'); });
+  const first = ids.length ? document.getElementById(ids[0]) : null;
+  if (first) first.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  else window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+}
+function fillDrawer(s, i, n) {
+  drawer.hidden = false;
+  drawer.scrollTop = 0;
+  drawer.classList.toggle('drill', T.mode === 'drill');
+  $('#drStep').textContent = T.mode === 'drill' ? '情境演練' : '導覽 ' + (i + 1) + ' / ' + n;
+  $('#drTitle').textContent = s.title;
+  $('#drLook').textContent = s.look;
+  $('#drMean').textContent = s.mean;
+  const ul = $('#drAct');
+  ul.textContent = '';
+  ul.className = s.timeline ? 'timeline' : '';
+  $('#drActTitle').textContent = s.timeline ? '應變時間軸' : '建議行動與預防措施';
+  if (s.timeline) s.timeline.forEach(([t, d]) => { const li = h('li'); li.append(h('b', '', t), h('span', '', d)); ul.appendChild(li); });
+  else s.act.forEach(t => { const li = h('li'); li.append(useIcon('i-check'), h('span', '', t)); ul.appendChild(li); });
+  $('#drText').textContent = '';
+  const dots = $('#drDots');
+  dots.textContent = '';
+  for (let k = 0; k < n; k++) dots.appendChild(h('i', k === i ? 'on' : k < i ? 'done' : ''));
+  $('#nextBtn span').textContent = i === n - 1 ? '完成' : '下一步';
+}
+function setStage(stage) {
+  S.stage = stage;
+  renderAll({ instantBrief: false });
+}
+async function goStep(i) {
+  const list = steps();
+  i = Math.max(0, Math.min(list.length - 1, i));
+  T.i = i;
+  const my = ++T.token;
+  hideTip();
+  const s = list[i];
+  if (T.mode === 'drill') setStage(i === 3 ? 4 : i === 0 ? 1 : 2);
+  fillDrawer(s, i, list.length);
+  spotlight(s.targets);
+  await sayGroup(s.voice, my);
+  if (my !== T.token) return;
+  if (s.timeline) {
+    for (const li of $$('#drAct li')) {
+      if (my !== T.token) return;
+      li.classList.add('done');
+      await sleep(reduce ? 0 : 650);
+    }
+  }
+  if (T.auto && !T.single && my === T.token && i < list.length - 1) {
+    await sleep(2200);
+    if (my === T.token) goStep(i + 1);
+  }
+}
+function startTour(i, single) {
+  unlockAudio();
+  $('#welcome').hidden = true;
+  T.mode = 'tour';
+  T.single = !!single;
+  goStep(i || 0);
+}
+function startDrill() {
+  unlockAudio();
+  $('#welcome').hidden = true;
+  T.mode = 'drill';
+  T.single = false;
+  S.stage = 0;
+  goStep(0);
+}
+function closeDrawer() {
+  T.token++;
+  T.mode = null;
+  stopVoice();
+  drawer.hidden = true;
+  document.body.classList.remove('touring');
+  $$('.spot').forEach(e => e.classList.remove('spot'));
+  document.body.style.setProperty('--drawer-h', '0px');
+}
+function nextStep() {
+  T.single = false;
+  if (T.i >= steps().length - 1) closeDrawer();
+  else goStep(T.i + 1);
+}
+if (window.ResizeObserver) {
+  new ResizeObserver(() => { document.body.style.setProperty('--drawer-h', drawer.hidden ? '0px' : drawer.offsetHeight + 'px'); }).observe(drawer);
+  new ResizeObserver(() => { document.documentElement.style.setProperty('--top-h', $('#top').offsetHeight + 'px'); }).observe($('#top'));
+}
+
+/* ================= 互動 ================= */
+document.addEventListener('click', e => {
+  const tb = e.target.closest('[data-table]');
+  if (tb) { toggleTable(tb); return; }
+  const ex = e.target.closest('[data-explain]');
+  if (ex) {
+    if (T.mode === 'drill') return;
+    const i = TOUR.findIndex(s => s.voice === ex.dataset.explain);
+    startTour(i, true);
+    return;
+  }
+  const rg = e.target.closest('[data-range]');
+  if (rg) {
+    S.range = +rg.dataset.range;
+    $$('[data-range]').forEach(b => b.setAttribute('aria-pressed', b === rg ? 'true' : 'false'));
+    renderAll({ instantBrief: true });
+    return;
+  }
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'tour') startTour(0);
+  else if (act === 'explore') { unlockAudio(); $('#welcome').hidden = true; }
+  else if (act === 'drill') startDrill();
+  else if (act === 'next') nextStep();
+  else if (act === 'prev') { T.single = false; goStep(T.i - 1); }
+  else if (act === 'close') closeDrawer();
+  else if (act === 'auto') { T.auto = !T.auto; b.setAttribute('aria-pressed', T.auto ? 'true' : 'false'); }
+  else if (act === 'voice') { voiceOn = !voiceOn; b.setAttribute('aria-pressed', voiceOn ? 'true' : 'false'); if (!voiceOn) stopVoice(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.key === 'Escape') {
+    if (!$('#welcome').hidden) $('#welcome').hidden = true;
+    else if (!drawer.hidden) closeDrawer();
+    return;
+  }
+  if (drawer.hidden || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); nextStep(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); T.single = false; goStep(T.i - 1); }
+});
+window.addEventListener('scroll', hideTip, { passive: true });
+let rsT = 0;
+let lastW = 0;
+const rerender = () => {
+  const w = $('#board').clientWidth;
+  if (w === lastW) return;
+  lastW = w;
+  renderTrend();
+  renderKpi();
+};
+if (window.ResizeObserver) new ResizeObserver(() => { clearTimeout(rsT); rsT = setTimeout(rerender, 120); }).observe($('#board'));
+
+/* ================= 啟動 ================= */
+function tick() {
+  const d = new Date();
+  $('#clock').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+tick();
+setInterval(tick, 1000);
+const now = new Date();
+$('#updated').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+renderAll({ instantBrief: false });
+lastW = $('#board').clientWidth;
+$('#welcome [data-act="tour"]').focus();
+})();
+</script>

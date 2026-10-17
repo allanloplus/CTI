@@ -1,13 +1,14 @@
 # CTI 情資作業全景
 
-內外部情資蒐集 × 脆弱性識別的教學網頁，由 Allan 顧問與 AI 助理阿拉蕾配音串場，供 ISMS 輔導客戶使用。共有兩個版本：
+內外部情資蒐集 × 脆弱性識別的教學網頁，由 Allan 顧問與 AI 助理阿拉蕾配音串場，供 ISMS 輔導客戶使用。共有三個版本：
 
 | 版本 | 檔案 | 適合 |
 |---|---|---|
 | 動畫簡報 | `index.html` | 顧問上課講解、會議播放 |
 | 闖關遊戲「情資官特訓營」 | `game/index.html` | 學員自學、課後練習、課堂互動 |
+| 戰情儀表板「CTI 戰情室」 | `dashboard/index.html` | 向管理階層說明情資成果、示範每日監控與應變 |
 
-兩個檔案都已內嵌圖片與配音，可直接用瀏覽器開啟、寄送或離線使用。
+三個檔案都已內嵌圖片與配音，可直接用瀏覽器開啟、寄送或離線使用。
 
 製作：Allan顧問，2027/10/17
 
@@ -79,6 +80,24 @@
 - **講師模式**：地圖下方可一鍵解鎖全部關卡，方便課堂示範。
 - **操作**：數字鍵 1～6 作答，Enter 下一題，Esc 回地圖；右上角可分別關閉語音與音效。
 
+# 戰情儀表板：CTI 戰情室
+
+用瀏覽器開啟 `dashboard/index.html`，選「開始語音導覽」或「自行瀏覽」。畫面數據是示範組織的模擬資料，每次開啟都相同；日期會跟著當天。
+
+| 區域 | 面板 | 呈現內容 |
+|---|---|---|
+| 整體態勢 | 威脅指數、關鍵指標、AI 晨報 | 0～100 的威脅指數與組成因子；待處置情資、P1／P2 未修補弱點、逾期弱點、內部告警數；AI 整理的今日三項重點 |
+| 內部情資 | 告警趨勢、告警類型排行、即時告警 | 依網路設備、系統日誌、端點 EDR、使用者行為、人員通報堆疊的告警量，標註尖峰事件 |
+| 外部情資 | 來源分布、相關性漏斗、最新情資 | 各來源數量；蒐集、去重、比對資產、需處置到結案的轉換；每則情資的相關性、威脅程度與處置狀態 |
+| 脆弱性 | 未修補弱點與修補期限、檢測行事曆、高風險資產 | P1～P4 期限內與逾期數量、SLA 修補率對照目標 95%；弱掃、滲透、健診、原碼、組態、社交工程的到期狀態；資產風險排序 |
+| 風險處置與成效 | 風險矩陣、處置單追蹤、成效指標趨勢 | 可能性 × 衝擊分布；待處理、處理中、逾期與結案數；MTTD、修補天數、釣魚點擊率、日誌納管率的 6 個月趨勢與目標 |
+
+- **語音導覽**：13 個步驟，Allan 顧問與阿拉蕾逐一說明每個面板，下方解說欄分成「畫面在看什麼」「資安管理意涵」「建議行動與預防措施」三段，並對應 ISO/IEC 27001:2022 條文與控制措施。可按「自動」關閉自動換頁。
+- **情境演練**：模擬「SSL VPN 零時差漏洞已遭利用」，分 4 步走完警報、比對資產、應變時間軸與結案，儀表板上的威脅指數、情資、弱點、資產、風險矩陣與處置單會跟著變化。
+- **解讀與表格**：每個面板右上角的「解讀」可單獨聽該面板的說明；有圖表的面板可按「表格」切換成數據表。
+- **期間**：上方切換近 7、30、90 天；90 天的告警趨勢以週為單位。
+- **操作**：導覽時 ← → 換步驟，Esc 結束。
+
 # 修改與重新建置
 
 ```
@@ -88,6 +107,9 @@ src/template.html        動畫簡報原始碼（樣式、結構、播放器與�
 game/src/voice.js        闖關遊戲的角色配音台詞
 game/src/audio/          闖關遊戲的配音 MP3 與 manifest.json
 game/src/template.html   闖關遊戲原始碼（樣式、結構、題庫與遊戲邏輯）
+dashboard/src/voice.js        戰情儀表板的導覽與演練台詞
+dashboard/src/audio/          戰情儀表板的配音 MP3 與 manifest.json
+dashboard/src/template.html   戰情儀表板原始碼（樣式、結構、模擬資料、圖表、導覽內容）
 src/sprites/*.webp       兩個版本共用的角色姿勢與表情圖
 src/source/*.jpg         角色設定原圖
 tools/gen_audio.py       依台詞產生配音
@@ -102,11 +124,14 @@ python3 tools/gen_audio.py                 # 動畫簡報：只重新產生台�
 python3 tools/build.py                     # 動畫簡報：重新組成 index.html
 python3 tools/gen_audio.py --target game   # 闖關遊戲的配音
 python3 tools/build.py --target game       # 闖關遊戲：重新組成 game/index.html
+python3 tools/gen_audio.py --target dash   # 戰情儀表板的配音
+python3 tools/build.py --target dash       # 戰情儀表板：重新組成 dashboard/index.html
 ```
 
-- **改台詞或表情**：動畫簡報編輯 `src/script.js`，遊戲編輯 `game/src/voice.js`，再執行對應的兩個指令。可用表情列在檔案開頭的註解。
+- **改台詞或表情**：動畫簡報編輯 `src/script.js`，遊戲編輯 `game/src/voice.js`，戰情儀表板編輯 `dashboard/src/voice.js`，再執行對應的兩個指令。可用表情列在檔案開頭的註解。
 - **改遊戲題目**：題庫在 `game/src/template.html` 的「關卡資料」區塊，例如 `L1_CARDS`、`L3_FEED`、`BOSS`。
+- **改儀表板數據或解說**：模擬資料在 `dashboard/src/template.html` 的「示範資料」區塊；各步驟的三段解說在 `TOUR` 與 `DRILL`。
 - **改唸法**：`tools/gen_audio.py` 的 `SAY` 清單只影響語音，例如把「A.5.7」唸成「A 五點七」。
-- **改署名或日期**：「製作：Allan顧問，2027/10/17」在 `src/template.html` 出現三處，在 `game/src/template.html` 出現兩處。
+- **改署名或日期**：「製作：Allan顧問，2027/10/17」在 `src/template.html` 出現三處，在 `game/src/template.html` 出現兩處，在 `dashboard/src/template.html` 出現兩處。
 - **重新裁切角色圖**：調整 `tools/crop_sprites.py` 的裁切框後執行 `python3 tools/crop_sprites.py`，需要 Pillow 與 numpy。
 - **網路連線**：產生配音時 edge-tts 會連到 `speech.platform.bing.com`（WebSocket，443 埠）；在有網域白名單的環境要先放行。

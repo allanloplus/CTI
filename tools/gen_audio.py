@@ -43,6 +43,10 @@ SAY = [
     (r"SOC", "S O C"),
     (r"KPI", "K P I"),
     (r"ISAC", "I SAC"),
+    (r"(?<![A-Za-z])AD(?![A-Za-z])", "A D"),
+    (r"(?<![A-Za-z])KEV(?![A-Za-z])", "K E V"),
+    (r"(?<![A-Za-z])SSL(?![A-Za-z])", "S S L"),
+    (r"(?<![A-Za-z])CTI(?![A-Za-z])", "C T I"),
 ]
 
 
@@ -82,7 +86,7 @@ async def main():
         certifi.where = lambda: ca
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--target", default="show", help="show（動畫簡報）或 game（闖關遊戲）")
+    ap.add_argument("--target", default="show", help="show（動畫簡報）、game（闖關遊戲）或 dash（戰情儀表板）")
     ap.add_argument("--all", action="store_true", help="全部重新產生")
     args = ap.parse_args()
     t = target(args.target)
