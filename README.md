@@ -1,8 +1,17 @@
 # CTI 情資作業全景
 
-內外部情資蒐集 × 脆弱性識別的動畫簡報網頁，由 Allan 顧問與 AI 助理阿拉蕾配音串場，供 ISMS 輔導客戶說明使用。
+內外部情資蒐集 × 脆弱性識別的教學網頁，由 Allan 顧問與 AI 助理阿拉蕾配音串場，供 ISMS 輔導客戶使用。共有兩個版本：
+
+| 版本 | 檔案 | 適合 |
+|---|---|---|
+| 動畫簡報 | `index.html` | 顧問上課講解、會議播放 |
+| 闖關遊戲「情資官特訓營」 | `game/index.html` | 學員自學、課後練習、課堂互動 |
+
+兩個檔案都已內嵌圖片與配音，可直接用瀏覽器開啟、寄送或離線使用。
 
 製作：Allan顧問，2027/10/17
+
+# 動畫簡報
 
 ## 觀看方式
 
@@ -50,28 +59,54 @@
 
 建議頻率、修補時限與 KPI 目標值都是建議值，頁面上已標示，使用時請依客戶的資安責任等級、法規要求與風險調整。風險排序、AI 終端機與紀錄表單中的資料為範例情境。
 
-## 修改與重新建置
+# 闖關遊戲：情資官特訓營
+
+用瀏覽器開啟 `game/index.html`，輸入代號後按「開始特訓」。手機與電腦都能玩，進度存在瀏覽器裡，下次開啟可以繼續。
+
+| 關卡 | 玩法 | 學習重點 |
+|---|---|---|
+| 1 情資雷達 | 12 張情資卡分到內部情資、外部情資或脆弱性識別 | 分辨情資來源 |
+| 2 生命週期拼圖 | 排出六個步驟，再判斷六項工作屬於哪一步 | 規劃、蒐集、處理、分析、分送、回饋 |
+| 3 情資洪流 | 對照資產清冊，判斷 10 則情資是否相關 | 用 CMDB 過濾情資，不相關也要記錄理由 |
+| 4 檢測工具箱 | 8 個情境選出合適的檢測方法 | 弱掃、滲透、健診、原碼、組態、社交工程等 |
+| 5 風險排序戰 | 為 5 個弱點排出 P1～P4 | CVSS 不等於優先序 |
+| 6 情資判官 | 5 則情資先判斷威脅程度，再選第一步行動 | 可能性 × 衝擊與對應行動 |
+| 7 稽核大魔王 | Allan 稽核員問 6 題，選出正確證據，答錯 3 次不及格 | 稽核看的是紀錄 |
+
+- **星等與解鎖**：每關依正確率給 0～3 顆星，拿到 1 顆星才解鎖下一關；稽核關剩幾面盾牌就拿幾顆星。
+- **等級**：依總星數升級為見習情資員、情資分析員、資深情資分析師；通過稽核關且達 19 顆星為首席情資官。
+- **結訓證書**：通過稽核關即可領取，證書印出代號、等級、星數、總分與結訓日期；七關都過關才會顯示正式結訓文字。
+- **講師模式**：地圖下方可一鍵解鎖全部關卡，方便課堂示範。
+- **操作**：數字鍵 1～6 作答，Enter 下一題，Esc 回地圖；右上角可分別關閉語音與音效。
+
+# 修改與重新建置
 
 ```
-src/script.js            串場台詞（每句：說話者、表情、台詞）
-src/audio/               每句配音 MP3 與 manifest.json（由 gen_audio.py 產生）
-src/template.html        頁面原始碼（樣式、結構、播放器與動畫）
-src/sprites/*.webp       角色姿勢與表情圖
+src/script.js            動畫簡報的串場台詞（每句：說話者、表情、台詞）
+src/audio/               動畫簡報的配音 MP3 與 manifest.json
+src/template.html        動畫簡報原始碼（樣式、結構、播放器與動畫）
+game/src/voice.js        闖關遊戲的角色配音台詞
+game/src/audio/          闖關遊戲的配音 MP3 與 manifest.json
+game/src/template.html   闖關遊戲原始碼（樣式、結構、題庫與遊戲邏輯）
+src/sprites/*.webp       兩個版本共用的角色姿勢與表情圖
 src/source/*.jpg         角色設定原圖
 tools/gen_audio.py       依台詞產生配音
-tools/build.py           把台詞、配音與圖片內嵌進範本，輸出 index.html
+tools/build.py           把台詞、配音與圖片內嵌進範本，輸出單一 HTML
 tools/crop_sprites.py    從設定原圖裁切並去背，輸出 src/sprites
 ```
 
 需要 Python 3、Node.js、ffmpeg（ffprobe），以及 `pip install edge-tts`。
 
 ```
-python3 tools/gen_audio.py     # 只重新產生台詞有變動的句子（--all 全部重產）
-python3 tools/build.py         # 重新組成 index.html
+python3 tools/gen_audio.py                 # 動畫簡報：只重新產生台詞有變動的句子（--all 全部重產）
+python3 tools/build.py                     # 動畫簡報：重新組成 index.html
+python3 tools/gen_audio.py --target game   # 闖關遊戲的配音
+python3 tools/build.py --target game       # 闖關遊戲：重新組成 game/index.html
 ```
 
-- **改台詞或表情**：編輯 `src/script.js`，再依序執行上面兩個指令。可用表情列在檔案開頭的註解。
+- **改台詞或表情**：動畫簡報編輯 `src/script.js`，遊戲編輯 `game/src/voice.js`，再執行對應的兩個指令。可用表情列在檔案開頭的註解。
+- **改遊戲題目**：題庫在 `game/src/template.html` 的「關卡資料」區塊，例如 `L1_CARDS`、`L3_FEED`、`BOSS`。
 - **改唸法**：`tools/gen_audio.py` 的 `SAY` 清單只影響語音，例如把「A.5.7」唸成「A 五點七」。
-- **改署名或日期**：`src/template.html` 中「製作：Allan顧問，2027/10/17」共出現三處。
+- **改署名或日期**：「製作：Allan顧問，2027/10/17」在 `src/template.html` 出現三處，在 `game/src/template.html` 出現兩處。
 - **重新裁切角色圖**：調整 `tools/crop_sprites.py` 的裁切框後執行 `python3 tools/crop_sprites.py`，需要 Pillow 與 numpy。
 - **網路連線**：產生配音時 edge-tts 會連到 `speech.platform.bing.com`（WebSocket，443 埠）；在有網域白名單的環境要先放行。

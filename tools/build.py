@@ -1,8 +1,9 @@
-"""把 src/template.html、src/script.js、src/sprites/*.webp 與 src/audio/*.mp3 組成單一 HTML 檔。
+"""把範本、台詞、角色圖（src/sprites）與語音組成單一 HTML 檔，可直接用瀏覽器開啟或離線使用。
 
 用法：
-  python3 tools/build.py                 產生 index.html（完整文件，可直接用瀏覽器開啟或離線播放）
-  python3 tools/build.py --fragment OUT  另外輸出不含 <html>/<head>/<body> 外殼的版本（供 Artifact 發布）
+  python3 tools/build.py                       動畫簡報 → index.html
+  python3 tools/build.py --target game         闖關遊戲 → game/index.html
+  python3 tools/build.py --fragment OUT        另外輸出不含 <html>/<head>/<body> 外殼的版本（供 Artifact 發布）
 需要 Node.js（讀取 src/script.js）。
 """
 import argparse
@@ -11,10 +12,9 @@ import json
 import re
 from pathlib import Path
 
-from cti_script import AUDIO, SCRIPT, line_key, load_lines, load_manifest
+from cti_script import line_key, load_lines, load_manifest, target
 
 ROOT = Path(__file__).resolve().parent.parent
-TEMPLATE = ROOT / "src" / "template.html"
 SPRITES = ROOT / "src" / "sprites"
 HEAD_MARK = "<!-- /head -->"
 
@@ -51,13 +51,13 @@ def inline_sprites(text: str) -> str:
     return out
 
 
-def audio_js() -> str:
+def audio_js(t) -> str:
     """只內嵌台詞與語音一致的句子；其餘在播放時改用瀏覽器語音。"""
-    manifest = load_manifest()
+    manifest = load_manifest(t)
     clips, missing = {}, []
-    for ln in load_lines():
+    for ln in load_lines(t):
         m = manifest.get(ln["id"])
-        mp3 = AUDIO / f'{ln["id"]}.mp3'
+        mp3 = t["audio"] / f'{ln["id"]}.mp3'
         if m and m.get("key") == line_key(ln) and mp3.exists():
             clips[ln["id"]] = {"dur": m["dur"], "src": data_uri(mp3, "audio/mpeg")}
         else:
@@ -71,23 +71,25 @@ def audio_js() -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--target", default="show", help="show（動畫簡報）或 game（闖關遊戲）")
     ap.add_argument("--fragment", type=Path, help="另存不含外殼的版本")
     args = ap.parse_args()
+    t = target(args.target)
 
-    tpl = TEMPLATE.read_text(encoding="utf-8")
+    tpl = t["template"].read_text(encoding="utf-8")
     if HEAD_MARK not in tpl:
         raise SystemExit(f"範本缺少 {HEAD_MARK} 分隔標記")
     full = inline_sprites(tpl)
     left = re.findall(r"\{\{(?!SCRIPT_JS|AUDIO_JS)[^}]*\}\}", full)
     if left:
         raise SystemExit(f"未替換的佔位符：{left[:5]}")
-    full = full.replace("/*{{SCRIPT_JS}}*/", SCRIPT.read_text(encoding="utf-8").strip())
-    full = full.replace("/*{{AUDIO_JS}}*/", audio_js())
+    full = full.replace("/*{{SCRIPT_JS}}*/", t["script"].read_text(encoding="utf-8").strip())
+    full = full.replace("/*{{AUDIO_JS}}*/", audio_js(t))
     head, body = full.split(HEAD_MARK, 1)
 
-    out = ROOT / "index.html"
+    out = t["out"]
     out.write_text(SHELL.format(head=head.strip(), body=body.strip()), encoding="utf-8")
-    print(f"index.html  {out.stat().st_size / 1024:.0f} KB")
+    print(f"{out.relative_to(ROOT)}  {out.stat().st_size / 1024:.0f} KB")
 
     if args.fragment:
         args.fragment.parent.mkdir(parents=True, exist_ok=True)

@@ -7,18 +7,19 @@
 
 用法：
     pip install edge-tts          另需 ffprobe（ffmpeg）與 Node.js
-    python3 tools/gen_audio.py          只重新產生台詞有變動的句子
-    python3 tools/gen_audio.py --all    全部重新產生
+    python3 tools/gen_audio.py                 動畫簡報：只重新產生台詞有變動的句子
+    python3 tools/gen_audio.py --target game   闖關遊戲
+    python3 tools/gen_audio.py --all           全部重新產生
 連線：edge-tts 會連到 speech.platform.bing.com（WebSocket，443 埠）。
 """
+import argparse
 import asyncio
 import json
 import os
 import re
 import subprocess
-import sys
 
-from cti_script import AUDIO, MANIFEST, line_key, load_lines, load_manifest
+from cti_script import line_key, load_lines, load_manifest, target
 
 VOICES = {
     "allan": dict(voice="zh-TW-YunJheNeural", rate="+6%", pitch="+0Hz"),
@@ -80,10 +81,16 @@ async def main():
         import certifi
         certifi.where = lambda: ca
 
-    regen_all = "--all" in sys.argv
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--target", default="show", help="show（動畫簡報）或 game（闖關遊戲）")
+    ap.add_argument("--all", action="store_true", help="全部重新產生")
+    args = ap.parse_args()
+    t = target(args.target)
+    AUDIO, MANIFEST = t["audio"], t["manifest"]
+    regen_all = args.all
     AUDIO.mkdir(parents=True, exist_ok=True)
-    lines = load_lines()
-    old = load_manifest()
+    lines = load_lines(t)
+    old = load_manifest(t)
     new = {}
     for ln in lines:
         path = AUDIO / f'{ln["id"]}.mp3'

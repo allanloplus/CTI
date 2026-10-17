@@ -1,0 +1,1729 @@
+<title>情資官特訓營</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="用七個關卡玩懂內外部情資蒐集、脆弱性識別與風險導向處置，由 Allan 顧問與 AI 助理阿拉蕾語音導覽">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+:root{
+  /* Layout: HUD rail on top, one scrolling game screen in the middle, character guide dock at the bottom */
+  color-scheme: dark;
+  --void:#050d16;
+  --void-glass:rgba(5,13,22,.86);
+  --scrim:rgba(3,8,14,.78);
+  --deck:#0a1826;
+  --deck-hi:#0f2335;
+  --rule:#1c3549;
+  --grid:rgba(56,211,223,.05);
+  --scan:rgba(56,211,223,.07);
+  --shadow:rgba(0,0,0,.55);
+  --text:#e4eef5;
+  --dim:#8fa6b7;
+  --int:#38d3df;
+  --int-deep:#18808a;
+  --ext:#ffc23d;
+  --vul:#ff5b6b;
+  --high:#ff8f5a;
+  --ok:#5be39a;
+  --violet:#a58bff;
+  --paper:#e9f0f6;
+  --paper-ink:#0b1b2a;
+  --int-soft:rgba(56,211,223,.14);
+  --ext-soft:rgba(255,194,61,.14);
+  --vul-soft:rgba(255,91,107,.14);
+  --ok-soft:rgba(91,227,154,.14);
+  --f-game:"Huninn","Noto Sans TC","PingFang TC",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-num:"Chakra Petch","Noto Sans TC",sans-serif;
+  --f-allan:"LXGW WenKai TC","Noto Sans TC",serif;
+  --f-arale:"Huninn","Noto Sans TC",sans-serif;
+  --accent:var(--int);
+}
+[data-accent="ext"]{--accent:var(--ext)}
+[data-accent="vul"]{--accent:var(--vul)}
+[data-accent="ok"]{--accent:var(--ok)}
+[data-accent="high"]{--accent:var(--high)}
+[data-accent="violet"]{--accent:var(--violet)}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:var(--void);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--void)}
+button,input{font:inherit;color:inherit}
+h1,h2,h3,p,figure{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg{flex:none}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:70;pointer-events:none}
+.veil{position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/56px 56px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/56px 56px;-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 80%);mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 80%)}
+.app{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+
+/* ---------- 頂部 HUD ---------- */
+.hud{display:flex;align-items:center;gap:10px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--void-glass);border-bottom:1px solid var(--rule);z-index:5}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;padding:0;border:0;background:none;font:400 19px var(--f-game);cursor:pointer;white-space:nowrap}
+.brand svg{width:30px;height:30px;color:var(--accent);transition:color .5s}
+.brand span{overflow:hidden;text-overflow:ellipsis}
+.hud-stats{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:999px;border:1px solid var(--rule);background:var(--deck);font-size:13px;font-weight:700;white-space:nowrap}
+.chip svg{width:15px;height:15px;color:var(--ext)}
+.chip b{font-family:var(--f-num);font-size:14px}
+.chip.rank{color:var(--ext);font-family:var(--f-game);font-weight:400;font-size:14px}
+.tog{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:999px;border:1px solid var(--rule);background:var(--deck);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tog svg{width:16px;height:16px}
+.tog[aria-pressed="false"]{opacity:.5;text-decoration:line-through}
+@media (max-width:640px){.chip.rank,.tog span{display:none}.brand span{font-size:17px}}
+
+/* ---------- 舞台與畫面 ---------- */
+.stage{position:relative;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin}
+.screen{min-height:100%;display:flex;flex-direction:column;padding-block:22px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{width:100%;max-width:1140px;margin:0 auto}
+.eyebrow{display:flex;align-items:center;gap:10px;font:600 12px/1 var(--f-num);letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.eyebrow::before{content:"";width:22px;height:2px;background:currentColor;box-shadow:0 0 8px currentColor}
+.mini-title{font-size:12.5px;font-weight:700;letter-spacing:.06em;color:var(--dim);margin-bottom:8px}
+.credit{font-size:13.5px;letter-spacing:.06em;color:var(--dim)}
+.credit b{color:var(--text)}
+kbd{display:inline-block;min-width:20px;padding:1px 5px;border-radius:5px;border:1px solid var(--rule);font:700 11px/1.4 var(--f-num);color:var(--dim);text-align:center}
+@media (hover:none){kbd{display:none}}
+
+/* ---------- 按鈕 ---------- */
+.btn-big{--c:var(--int);--cd:var(--int-deep);display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 26px;border:0;border-radius:14px;background:var(--c);color:var(--paper-ink);font:400 19px var(--f-game);cursor:pointer;box-shadow:0 5px 0 var(--cd);transition:transform .08s,box-shadow .08s,filter .2s}
+.btn-big:hover{filter:brightness(1.08)}
+.btn-big:active{transform:translateY(4px);box-shadow:0 1px 0 var(--cd)}
+.btn-big:disabled{filter:grayscale(1) brightness(.6);cursor:not-allowed;transform:none}
+.btn-big svg{width:20px;height:20px}
+.btn-big.sm{min-height:42px;padding:0 18px;font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--rule);background:var(--deck);font-size:15px;font-weight:700;cursor:pointer;transition:border-color .2s}
+.btn-ghost:hover{border-color:var(--accent)}
+.btn-ghost svg{width:18px;height:18px}
+.btn-ghost.sm{min-height:36px;padding:0 12px;font-size:13px}
+.btn-ghost.warn{border-color:var(--vul);color:var(--vul)}
+
+/* ---------- 角色導覽列 ---------- */
+.guide{display:flex;align-items:flex-end;gap:18px;padding-block:8px 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--void-glass);border-top:1px solid var(--rule);z-index:5}
+.g-host{display:flex;align-items:flex-end;gap:12px;flex:1;min-width:0;transition:opacity .3s}
+.g-allan{flex-direction:row-reverse}
+.g-face{position:relative;width:64px;height:64px;flex:none;overflow:hidden;border-radius:50%;border:3px solid var(--paper);background:radial-gradient(circle at 50% 35%,var(--deck-hi),var(--deck));transition:transform .3s,box-shadow .3s}
+.g-arale .g-face{border-color:var(--int);box-shadow:0 0 14px -2px var(--int)}
+.g-face img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+.holo-face::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,var(--scan) 3px 4px);animation:scanmove 2.4s linear infinite}
+.g-host.talking .g-face{transform:translateY(-4px) scale(1.06)}
+.g-host:not(.on) .bubble{opacity:.38}
+.g-host:not(.on) .g-face{filter:saturate(.6)}
+.bubble{position:relative;flex:1;min-width:0;min-height:48px;padding:7px 14px 9px;border-radius:14px;font-size:15px;line-height:1.5;transition:opacity .3s}
+.bubble-name{display:block;font:700 10.5px/1.3 var(--f-num);letter-spacing:.12em;opacity:.7}
+.bubble--allan{background:var(--paper);color:var(--paper-ink);font-family:var(--f-allan);font-weight:700}
+.bubble--arale{background:color-mix(in srgb,var(--int) 12%,var(--deck));border:1px solid color-mix(in srgb,var(--int) 60%,transparent);font-family:var(--f-arale);box-shadow:0 0 22px -8px var(--int)}
+.bubble-text:empty::before{content:"…";opacity:.4}
+@media (max-width:700px){.g-host:not(.on){display:none}.g-face{width:50px;height:50px}.bubble{font-size:14px}}
+
+/* ---------- 標題畫面 ---------- */
+.scr-title .wrap{flex:1;display:grid;gap:20px;align-items:center}
+@media (min-width:900px){.scr-title .wrap{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}}
+.title-cast{position:relative;display:flex;justify-content:center;align-items:flex-end}
+.title-cast::before{content:"";position:absolute;left:10%;right:10%;bottom:-6px;height:30px;border-radius:50%;background:radial-gradient(ellipse,color-mix(in srgb,var(--int) 45%,transparent),transparent 70%)}
+.cast-allan{position:relative;height:min(50vh,440px);width:auto;filter:drop-shadow(0 16px 26px var(--shadow));animation:bob 4s ease-in-out infinite}
+.cast-arale{position:relative;height:min(45vh,400px);width:auto;margin-left:-26px;filter:drop-shadow(0 0 14px color-mix(in srgb,var(--int) 50%,transparent));animation:bob 4s ease-in-out -2s infinite}
+.title-copy{display:flex;flex-direction:column;gap:14px}
+.game-title{font:400 clamp(48px,8vw,92px)/1.02 var(--f-game);letter-spacing:.03em;text-shadow:0 0 34px color-mix(in srgb,var(--int) 40%,transparent)}
+.game-title span{color:var(--int)}
+.title-sub{font-size:17px;color:var(--dim);max-width:30em}
+.feats{display:flex;flex-wrap:wrap;gap:8px}
+.feats li{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 10%,transparent);font-size:14px;font-weight:700}
+.feats svg{width:16px;height:16px}
+.name-field{display:flex;flex-direction:column;gap:6px;max-width:340px}
+.name-field span{font-size:13px;font-weight:700;color:var(--dim)}
+.name-field input{height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--rule);background:var(--deck);font-size:16px;font-weight:700}
+.name-field input:focus{border-color:var(--int);outline:none;box-shadow:0 0 0 3px var(--int-soft)}
+.title-btns{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+@media (max-width:899px){.cast-allan{height:30vh}.cast-arale{height:27vh}.scr-title .wrap{align-content:start}}
+
+/* ---------- 任務地圖 ---------- */
+.map-head{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.map-head h2{font:400 clamp(28px,4vw,38px)/1.2 var(--f-game);margin-top:6px}
+.map-head p{color:var(--dim);font-size:14px}
+.rank-card{display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center;min-width:min(300px,100%);padding:12px 16px;border-radius:16px;background:var(--deck);border:1px solid var(--rule)}
+.rank-name{font:400 20px var(--f-game);color:var(--ext)}
+.rank-stars{font:700 14px var(--f-num);color:var(--dim)}
+.rank-stars b{color:var(--text);font-size:18px}
+.rank-bar{grid-column:1/-1;height:8px;overflow:hidden;border-radius:4px;background:var(--rule)}
+.rank-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--int),var(--ext));transition:width .8s}
+.rank-next{grid-column:1/-1;font-size:12px;color:var(--dim)}
+.map-area{position:relative}
+.map-path{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.map-path path{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.map-path .base{stroke:var(--rule);stroke-dasharray:2 12}
+.map-path .done{stroke:var(--int);stroke-dasharray:10 10;animation:flow 1s linear infinite;filter:drop-shadow(0 0 4px var(--int))}
+.map{position:relative;display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+@media (min-width:960px){
+  .map{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:34px}
+  .node[data-n="5"]{grid-column:4;grid-row:2}
+  .node[data-n="6"]{grid-column:3;grid-row:2}
+  .node[data-n="7"]{grid-column:1 / span 2;grid-row:2}
+}
+.node-btn{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px 16px 14px;border-radius:20px;border:1px solid color-mix(in srgb,var(--c) 50%,var(--rule));background:linear-gradient(160deg,color-mix(in srgb,var(--c) 15%,var(--deck)),var(--deck) 70%);text-align:left;cursor:pointer;box-shadow:0 6px 0 color-mix(in srgb,var(--c) 28%,var(--void));transition:transform .15s,box-shadow .15s}
+.node-btn:hover{transform:translateY(-3px);box-shadow:0 9px 0 color-mix(in srgb,var(--c) 28%,var(--void))}
+.node-top{display:flex;align-items:center;justify-content:space-between;width:100%}
+.node-num{font:700 12.5px var(--f-num);letter-spacing:.14em;color:var(--c)}
+.node-lock{width:20px;height:20px;color:var(--dim)}
+.node-ic{width:38px;height:38px;color:var(--c)}
+.node-name{font:400 23px/1.25 var(--f-game)}
+.node-learn{font-size:13px;line-height:1.5;color:var(--dim)}
+.stars{display:inline-flex;gap:3px}
+.stars svg{width:20px;height:20px;color:var(--rule)}
+.stars svg.on{color:var(--ext);filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ext) 60%,transparent))}
+.node .stars{margin-top:auto;padding-top:4px}
+.node.locked .node-btn{filter:saturate(.15) brightness(.62);cursor:not-allowed}
+.node.locked .node-btn:hover{transform:none}
+.node.next .node-btn{animation:nodeglow 2.2s ease-in-out infinite}
+.node.next .node-btn::after{content:"挑戰";position:absolute;top:-11px;right:14px;padding:2px 10px;border-radius:999px;background:var(--c);color:var(--paper-ink);font:400 13px var(--f-game)}
+.node.boss .node-btn{flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:16px;background:linear-gradient(120deg,color-mix(in srgb,var(--vul) 22%,var(--deck)),var(--deck) 75%)}
+.node.boss .node-ic{width:58px;height:58px}
+.node.boss .node-top{order:-1}
+.boss-face{width:84px;height:84px;flex:none;overflow:hidden;border-radius:50%;border:3px solid var(--paper);box-shadow:0 0 0 4px var(--vul-soft)}
+.boss-face img{width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+.boss-copy{display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px}
+.map-foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:26px}
+
+/* ---------- 關卡說明視窗 ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:var(--scrim)}
+.modal-card{width:min(660px,100%);max-height:calc(100% - 16px);overflow:auto;display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:22px;background:var(--deck-hi);border:1px solid color-mix(in srgb,var(--c) 55%,var(--rule));box-shadow:0 30px 60px -20px var(--shadow);animation:modalIn .35s cubic-bezier(.2,.9,.3,1.2)}
+.modal-card .eyebrow{color:var(--c)}
+.mc-head{display:flex;align-items:center;gap:14px}
+.mc-head svg{width:52px;height:52px;color:var(--c)}
+.mc-head h2{font:400 32px/1.2 var(--f-game)}
+.mc-goal{font-size:16px}
+.mc-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.mc-grid > div{padding:12px 14px;border-radius:14px;background:var(--deck);border:1px solid var(--rule)}
+.list li{display:flex;gap:8px;padding:3px 0;font-size:14px}
+.list li svg{width:16px;height:16px;margin-top:4px;color:var(--c,var(--ok))}
+.mc-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+
+/* ---------- 關卡畫面 ---------- */
+.lv-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.icon-btn{display:grid;place-items:center;width:42px;height:42px;flex:none;border-radius:12px;border:1px solid var(--rule);background:var(--deck);cursor:pointer}
+.icon-btn svg{width:20px;height:20px}
+.lv-titles{display:flex;flex-direction:column;min-width:0;flex:1}
+.lv-tag{font:700 12px var(--f-num);letter-spacing:.16em;color:var(--accent)}
+.lv-titles h2{font:400 26px/1.2 var(--f-game)}
+.lv-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.meta{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--rule);background:var(--deck);font:700 14px var(--f-num);white-space:nowrap}
+.meta.score b{color:var(--ext);font-size:17px}
+.meta.combo{border-color:var(--high);color:var(--high);animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+.meta.lives svg{width:18px;height:18px;color:var(--int)}
+.meta.lives svg.off{color:var(--rule)}
+.lv-progress{height:6px;margin:14px 0 18px;overflow:hidden;border-radius:3px;background:var(--rule)}
+.lv-progress i{display:block;height:100%;width:0;background:var(--accent);box-shadow:0 0 10px var(--accent);transition:width .5s}
+.lv-body{flex:1}
+.qcard{position:relative;padding:18px 22px;border-radius:18px;background:linear-gradient(160deg,var(--deck-hi),var(--deck));border:1px solid var(--rule);margin-bottom:16px}
+.q-tag{font:700 12px var(--f-num);letter-spacing:.12em;color:var(--accent)}
+.qcard h3{font:400 clamp(19px,2.4vw,24px)/1.45 var(--f-game);margin-top:4px}
+.q-sub{margin-top:6px;font-size:14px;color:var(--dim)}
+.enter{animation:cardIn .45s cubic-bezier(.2,.9,.3,1.15)}
+.shake{animation:shake .45s}
+.opts{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.opts.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.opts.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opt{--c:var(--accent);position:relative;display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 14px;border-radius:16px;border:2px solid var(--rule);background:var(--deck);text-align:left;cursor:pointer;box-shadow:0 5px 0 var(--rule);transition:transform .08s,box-shadow .08s,border-color .2s,background .2s}
+.opt:hover:not(:disabled){border-color:var(--c)}
+.opt:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--rule)}
+.opt:disabled{cursor:default}
+.opt > svg{width:28px;height:28px;color:var(--c)}
+.opt-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.opt-txt b{font-size:16px;line-height:1.4}
+.opt-txt small{font-size:12.5px;color:var(--dim)}
+.opt kbd{align-self:flex-start}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--deck));box-shadow:0 5px 0 color-mix(in srgb,var(--ok) 45%,var(--void))}
+.opt.wrong{border-color:var(--vul);background:color-mix(in srgb,var(--vul) 14%,var(--deck));box-shadow:0 5px 0 color-mix(in srgb,var(--vul) 45%,var(--void));animation:shake .45s}
+.opt.answer:not(.right){border-color:var(--ok);border-style:dashed}
+.opt:disabled:not(.right):not(.wrong):not(.answer){opacity:.5}
+@media (max-width:620px){.opts.cols-3,.opts.cols-2{grid-template-columns:minmax(0,1fr)}}
+
+/* 第 1 關：情資卡分類 */
+.card-zone{position:relative;display:grid;place-items:center;min-height:210px;margin-bottom:18px}
+.card-zone::before{content:"";position:absolute;width:min(420px,96%);aspect-ratio:1;border-radius:50%;background:repeating-radial-gradient(circle closest-side,transparent 0 calc(25% - 1px),color-mix(in srgb,var(--accent) 22%,transparent) calc(25% - 1px) 25%);-webkit-mask-image:radial-gradient(circle closest-side,#000 50%,transparent);mask-image:radial-gradient(circle closest-side,#000 50%,transparent)}
+.card-zone::after{content:"";position:absolute;width:min(420px,96%);aspect-ratio:1;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 300deg,color-mix(in srgb,var(--accent) 25%,transparent) 360deg);-webkit-mask-image:radial-gradient(circle closest-side,#000 60%,transparent);mask-image:radial-gradient(circle closest-side,#000 60%,transparent);animation:spin 5s linear infinite}
+.icard{position:relative;z-index:1;width:min(460px,100%);padding:20px 22px;border-radius:20px;text-align:center;background:linear-gradient(160deg,var(--deck-hi),var(--deck));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--rule));box-shadow:0 18px 40px -18px var(--shadow)}
+.icard .ic-big{display:block;width:50px;height:50px;margin:0 auto 6px;color:var(--accent)}
+.icard h3{font:400 25px/1.3 var(--f-game)}
+.icard p{margin-top:4px;font-size:14.5px;color:var(--dim)}
+.icard .src-tag{display:inline-block;margin-bottom:6px;padding:2px 10px;border-radius:999px;background:var(--ext-soft);color:var(--ext);font-size:12.5px;font-weight:700}
+.icard.fly{transition:transform .5s cubic-bezier(.5,0,.6,1),opacity .5s;opacity:0}
+.bins .opt{flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:118px;text-align:center;border-color:color-mix(in srgb,var(--c) 55%,var(--rule));background:color-mix(in srgb,var(--c) 9%,var(--deck));box-shadow:0 6px 0 color-mix(in srgb,var(--c) 32%,var(--void))}
+.bins .opt > svg{width:34px;height:34px}
+.bins .opt-txt{align-items:center}
+.bins .opt-txt b{font:400 20px var(--f-game);color:var(--c)}
+.bins kbd{position:absolute;top:8px;right:8px}
+@media (max-width:620px){.bins.opts{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.bins .opt{min-height:96px;padding:10px 6px}.bins .opt-txt small{display:none}.bins .opt-txt b{font-size:16px}}
+
+/* 第 2 關：生命週期 */
+.slots{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:86px;padding:8px;border-radius:14px;border:2px dashed var(--rule);font:700 13px var(--f-num);color:var(--dim);text-align:center}
+.slot b{font:400 18px var(--f-game);color:var(--text)}
+.slot.filled{border-style:solid;border-color:var(--ok);background:var(--ok-soft);animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+.slot.next{border-color:var(--accent);animation:slotpulse 1.4s ease-in-out infinite}
+.slot:not(:last-child)::after{content:"›";position:absolute;right:-10px;top:50%;transform:translateY(-50%);font:700 16px var(--f-num);color:var(--dim)}
+.tiles{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.tile{display:inline-flex;align-items:center;gap:8px;min-width:128px;justify-content:center;padding:12px 16px;border-radius:14px;border:2px solid var(--rule);background:var(--deck);font:400 19px var(--f-game);cursor:pointer;box-shadow:0 5px 0 var(--rule);transition:transform .08s,box-shadow .08s,border-color .2s}
+.tile:hover:not(:disabled){border-color:var(--accent)}
+.tile:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--rule)}
+.tile.used{visibility:hidden}
+.opts-6{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:700px){.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.slot:nth-child(3)::after{display:none}.opts-6{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 第 3 關：資產清冊過濾 */
+.triage{display:grid;gap:16px}
+@media (min-width:900px){.triage{grid-template-columns:290px minmax(0,1fr);align-items:start}}
+.cmdb{padding:14px 16px;border-radius:16px;background:var(--deck);border:1px solid color-mix(in srgb,var(--ext) 40%,var(--rule))}
+.cmdb li{display:flex;gap:10px;align-items:flex-start;padding:7px 8px;border-radius:10px;font-size:13.5px;line-height:1.45;transition:background .3s,box-shadow .3s}
+.cmdb li svg{width:18px;height:18px;margin-top:1px;color:var(--ext)}
+.cmdb li b{display:block}
+.cmdb li small{color:var(--dim)}
+.cmdb li.hit{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.cmdb.none li{opacity:.55}
+.feed .icard{text-align:left;width:100%}
+@media (max-width:899px){.cmdb ul{display:flex;flex-wrap:wrap;gap:6px}.cmdb li{padding:4px 10px;border:1px solid var(--rule);border-radius:999px;font-size:12.5px}.cmdb li small,.cmdb li svg{display:none}}
+
+/* 第 5 關：風險排序 */
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px;font-size:13px;color:var(--dim)}
+.legend li{display:inline-flex;align-items:center;gap:6px}
+.pc{display:inline-block;min-width:30px;padding:4px 6px;border-radius:5px;text-align:center;font:700 12px/1 var(--f-num);color:var(--paper-ink)}
+.pc.p1{background:var(--vul)}.pc.p2{background:var(--high)}.pc.p3{background:var(--ext)}.pc.p4{background:var(--int)}
+.fcards{display:grid;gap:10px}
+.fcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--deck);border:1px solid var(--rule);transition:border-color .3s}
+.fcard h3{font-size:16px;font-weight:900}
+.fmeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cvss{font:700 12px var(--f-num);padding:2px 8px;border-radius:5px;background:var(--vul-soft);color:var(--vul)}
+.tagc{font-size:12px;padding:2px 8px;border-radius:5px;border:1px solid var(--rule);color:var(--dim)}
+.tagc.hot{border-color:color-mix(in srgb,var(--ext) 60%,transparent);color:var(--ext)}
+.pbtns{display:flex;gap:6px}
+.pbtn{--pc:var(--int);width:50px;height:46px;border-radius:12px;border:2px solid var(--rule);background:var(--deck-hi);font:700 15px var(--f-num);cursor:pointer;transition:background .2s,border-color .2s}
+.pbtn:hover:not(:disabled){border-color:var(--pc)}
+.pbtn[aria-pressed="true"]{background:var(--pc);border-color:var(--pc);color:var(--paper-ink)}
+.pbtn.p1{--pc:var(--vul)}.pbtn.p2{--pc:var(--high)}.pbtn.p3{--pc:var(--ext)}.pbtn.p4{--pc:var(--int)}
+.pbtn:disabled{cursor:default}
+.verdict{grid-column:1/-1;display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-radius:10px;font-size:13.5px;animation:cardIn .4s both}
+.verdict b{white-space:nowrap}
+.verdict.ok{background:var(--ok-soft)}.verdict.near{background:var(--ext-soft)}.verdict.ng{background:var(--vul-soft)}
+.fcard.ok{border-color:var(--ok)}.fcard.near{border-color:var(--ext)}.fcard.ng{border-color:var(--vul)}
+.prio-go{display:flex;justify-content:center;margin-top:16px}
+@media (max-width:700px){.fcard{grid-template-columns:minmax(0,1fr)}.pbtns{justify-content:stretch}.pbtn{flex:1}}
+
+/* 第 6 關：情資判官 */
+.lvl-opts .opt{--c:var(--lc)}
+.lvl-opts .opt b{color:var(--lc)}
+
+/* 第 7 關：稽核大魔王 */
+.boss{display:grid;gap:18px}
+@media (min-width:900px){.boss{grid-template-columns:280px minmax(0,1fr);align-items:start}}
+.auditor{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px;border-radius:22px;text-align:center;background:linear-gradient(180deg,color-mix(in srgb,var(--vul) 16%,var(--deck)),var(--deck));border:1px solid color-mix(in srgb,var(--vul) 45%,var(--rule))}
+.aud-face{width:168px;height:168px;overflow:hidden;border-radius:50%;border:4px solid var(--paper);box-shadow:0 0 0 6px var(--vul-soft),0 0 40px -6px var(--vul)}
+.aud-face img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+.aud-face.hit{animation:hit .55s}
+.aud-face.miss{animation:shake .45s}
+.aud-name{font:400 22px var(--f-game)}
+.aud-say{min-height:44px;font-family:var(--f-allan);font-weight:700;font-size:15px;color:var(--paper)}
+.hp{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;width:100%}
+.hp i{height:12px;border-radius:3px;background:var(--vul);box-shadow:0 0 8px color-mix(in srgb,var(--vul) 60%,transparent);transition:background .4s,box-shadow .4s}
+.hp i.off{background:var(--rule);box-shadow:none}
+.hp-label{font-size:12.5px;color:var(--dim)}
+.hp-label b{color:var(--vul);font-family:var(--f-num)}
+.boss-q{position:relative;margin-bottom:16px;padding:16px 20px;border-radius:18px;background:var(--paper);color:var(--paper-ink)}
+.boss-q::before{content:"";position:absolute;left:-8px;top:28px;width:16px;height:16px;transform:rotate(45deg);background:inherit}
+.bq-name{display:block;font:700 12px var(--f-num);letter-spacing:.12em;opacity:.65}
+.bq-text{font:700 clamp(18px,2.2vw,22px)/1.5 var(--f-allan)}
+.docs .opt > svg{color:var(--int)}
+@media (max-width:899px){.boss-q::before{display:none}.auditor{flex-direction:row;flex-wrap:wrap;justify-content:center;text-align:left}.aud-face{width:96px;height:96px}.auditor .hp{flex:1 1 100%}}
+.screen-shake{animation:shake .45s}
+
+/* ---------- 回饋 ---------- */
+.feedback{display:flex;align-items:center;gap:14px;margin-top:18px;padding:14px 16px;border-radius:16px;border:1px solid var(--rule);background:var(--deck-hi);animation:fbIn .3s both}
+.feedback.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--deck-hi))}
+.feedback.ng{border-color:var(--vul);background:color-mix(in srgb,var(--vul) 10%,var(--deck-hi))}
+.feedback.near{border-color:var(--ext);background:color-mix(in srgb,var(--ext) 10%,var(--deck-hi))}
+.fb-icon{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:50%;background:var(--dim);color:var(--paper-ink)}
+.feedback.ok .fb-icon{background:var(--ok)}.feedback.ng .fb-icon{background:var(--vul)}.feedback.near .fb-icon{background:var(--ext)}
+.fb-icon svg{width:24px;height:24px}
+.fb-copy{flex:1;min-width:0}
+.fb-title{display:block;font:400 19px/1.35 var(--f-game)}
+.fb-text{font-size:14.5px;line-height:1.6;opacity:.92}
+@media (max-width:620px){.feedback{flex-wrap:wrap}.feedback .btn-big{width:100%}}
+.pts{position:fixed;z-index:60;transform:translate(-50%,0);pointer-events:none;font:700 24px var(--f-num);color:var(--ok);text-shadow:0 0 12px var(--ok);animation:ptsUp .95s ease-out forwards}
+.pts.bad{color:var(--vul);text-shadow:0 0 12px var(--vul)}
+
+/* ---------- 結果 ---------- */
+.res-card{width:min(680px,100%);margin:auto;display:flex;flex-direction:column;align-items:center;gap:16px;padding:28px 24px;border-radius:24px;text-align:center;background:linear-gradient(160deg,var(--deck-hi),var(--deck));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--rule))}
+.res-card h2{font:400 34px/1.2 var(--f-game)}
+.res-verdict{font:400 18px var(--f-game);color:var(--accent)}
+.res-stars{display:flex;gap:12px}
+.res-stars svg{width:66px;height:66px;color:var(--rule)}
+.res-stars svg.on{color:var(--ext);filter:drop-shadow(0 0 12px color-mix(in srgb,var(--ext) 70%,transparent));animation:starpop .55s cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--i) * .28s + .2s)}
+.res-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+.res-stats div{padding:10px;border-radius:14px;background:var(--deck);border:1px solid var(--rule)}
+.res-stats b{display:block;font:700 28px/1.2 var(--f-num)}
+.res-stats span{font-size:12.5px;color:var(--dim)}
+.takeaways{width:100%;padding:14px 16px;border-radius:14px;text-align:left;background:var(--deck);border:1px solid var(--rule)}
+.res-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+
+/* ---------- 結訓證書 ---------- */
+.cert-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:center;margin-bottom:16px}
+.cert-tools .name-field{max-width:260px}
+.cert{position:relative;width:min(780px,100%);margin:0 auto;padding:34px clamp(18px,5vw,48px) 30px;border-radius:14px;text-align:center;background:var(--paper);color:var(--paper-ink);box-shadow:0 30px 60px -30px var(--shadow);outline:2px solid color-mix(in srgb,var(--paper-ink) 25%,transparent);outline-offset:-14px}
+.cert::before{content:"";position:absolute;inset:22px;border:1px solid color-mix(in srgb,var(--paper-ink) 18%,transparent);border-radius:6px;pointer-events:none}
+.cert-en{font:700 12.5px var(--f-num);letter-spacing:.32em;color:color-mix(in srgb,var(--paper-ink) 60%,transparent)}
+.cert-title{margin-top:4px;font:400 clamp(34px,6vw,48px)/1.2 var(--f-game)}
+.cert-line{margin-top:14px;font-size:15px}
+.cert-name{display:inline-block;margin:6px 0 10px;padding:0 24px 4px;border-bottom:2px solid var(--paper-ink);font:700 clamp(26px,5vw,38px)/1.3 var(--f-allan);overflow-wrap:anywhere}
+.cert-body{max-width:34em;margin:0 auto;font-size:15px;line-height:1.75}
+.cert-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:20px}
+.cert-stats div{padding:8px;border-radius:10px;background:color-mix(in srgb,var(--paper-ink) 6%,transparent)}
+.cert-stats span{display:block;font-size:12px;color:color-mix(in srgb,var(--paper-ink) 65%,transparent)}
+.cert-stats b{font-size:16px}
+.cert-sign{display:flex;justify-content:center;gap:clamp(18px,6vw,56px);margin-top:20px}
+.cert-sign div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:700}
+.cert-sign img{width:62px;height:62px;border-radius:50%;object-fit:cover;object-position:50% 16%;border:2px solid var(--paper-ink);background:var(--deck)}
+.cert-seal{position:absolute;right:clamp(10px,4vw,34px);top:clamp(14px,4vw,30px);width:clamp(74px,14vw,104px);height:auto;color:var(--vul);transform:rotate(-12deg);opacity:.85}
+.cert-seal text{font:700 9px var(--f-num);letter-spacing:.18em;fill:currentColor}
+.cert-credit{margin-top:14px;font-size:12px;color:color-mix(in srgb,var(--paper-ink) 60%,transparent)}
+@media (max-width:560px){.cert-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- 動畫 ---------- */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes flow{to{stroke-dashoffset:-40}}
+@keyframes scanmove{to{background-position:0 24px}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pop{0%{transform:scale(.8)}100%{transform:scale(1)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes fbIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes ptsUp{0%{opacity:0;transform:translate(-50%,6px) scale(.8)}20%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-56px) scale(1)}}
+@keyframes starpop{0%{opacity:0;transform:scale(.2) rotate(-40deg)}100%{opacity:1;transform:none}}
+@keyframes nodeglow{0%,100%{box-shadow:0 6px 0 color-mix(in srgb,var(--c) 28%,var(--void)),0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent)}50%{box-shadow:0 6px 0 color-mix(in srgb,var(--c) 28%,var(--void)),0 0 28px 2px color-mix(in srgb,var(--c) 45%,transparent)}}
+@keyframes slotpulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 18px -2px var(--accent)}}
+@keyframes hit{0%{transform:scale(1)}25%{transform:scale(.9) rotate(-4deg);box-shadow:0 0 0 8px var(--ok-soft),0 0 50px 0 var(--ok)}60%{transform:scale(1.05) rotate(3deg)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+</style>
+<!-- /head -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.5 1.1 6.3L12 17.3l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="currentColor"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6"/></symbol>
+  <symbol id="i-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.5 13.9L7 22l5-3 5 3-1.5-8.1"/><path d="M12 6.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3z" fill="currentColor"/></symbol>
+  <symbol id="i-shieldfill" viewBox="0 0 24 24"><path d="M12 2.5l8.5 3.2v6.1c0 5.2-3.6 8.8-8.5 9.7-4.9-.9-8.5-4.5-8.5-9.7V5.7z" fill="currentColor"/></symbol>
+  <symbol id="i-radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.5-6.5"/><circle cx="16" cy="9.5" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-cycle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9"/><path d="M18.5 3v4.2h-4.2M5.5 21v-4.2h4.2"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h7M4 18h4M18 4v16M15 17l3 3 3-3"/></symbol>
+  <symbol id="i-gavel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l7 7M10.5 6.5l7 7M12 5l-4.5 4.5M19 12l-4.5 4.5M10.5 12L3 19.5M12 21h9"/></symbol>
+  <symbol id="i-audit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4M9 13l2 2 4-4"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5l13 4-1.6 4.8L2 11.5z"/><path d="M8.5 13.6L7.6 19H4M16 9l4.5-1.5M18.5 6.5l1 4"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v4M12 11l-6 5.5M12 11l6 5.5"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><path d="M8 7.5h.01M8 16.5h.01"/></symbol>
+  <symbol id="i-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01M7 13h6M7 16h9"/></symbol>
+  <symbol id="i-endpoint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></symbol>
+  <symbol id="i-bug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="8" width="10" height="12" rx="5"/><path d="M12 8v12M7 12H3M21 12h-4M7 17l-3 2M17 17l3 2M8 5l2 3M16 5l-2 3"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4M4 12h16"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-hook" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v11a5 5 0 1 1-10 0v-2l3 3"/><circle cx="14" cy="3.5" r="1.2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v16M12 4v16M19 4v16"/><circle cx="5" cy="9" r="2" fill="currentColor"/><circle cx="12" cy="15" r="2" fill="currentColor"/><circle cx="19" cy="7" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M2 10l10-6 10 6z"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2.5 20c.8-3.5 3-5 5.5-5s4.7 1.5 5.5 5M10.5 20c.8-3.5 3-5 5.5-5s4.7 1.5 5.5 5"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
+  <symbol id="i-factory" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l6 4V10l6 4V6l6-2v17z"/></symbol>
+</svg>
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+
+<div class="app" lang="zh-Hant">
+  <header class="hud">
+    <button class="brand" type="button" data-act="to-map" aria-label="回任務地圖"><svg aria-hidden="true"><use href="#i-badge"/></svg><span>情資官特訓營</span></button>
+    <div class="hud-stats">
+      <span class="chip rank" id="hudRank">見習情資員</span>
+      <span class="chip" title="已獲得的星星"><svg aria-hidden="true"><use href="#i-star"/></svg><b id="hudStars">0</b>/21</span>
+      <button class="tog" type="button" id="btnVoice" data-act="voice" aria-pressed="true" title="角色語音"><svg aria-hidden="true"><use href="#i-vol"/></svg><span>語音</span></button>
+      <button class="tog" type="button" id="btnSfx" data-act="sfx" aria-pressed="true" title="音效"><svg aria-hidden="true"><use href="#i-music"/></svg><span>音效</span></button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- 標題 -->
+    <section class="screen scr-title" id="scrTitle">
+      <div class="wrap">
+        <div class="title-cast" aria-hidden="true">
+          <img class="cast-allan" src="{{sprite:allan-present}}" alt="">
+          <img class="cast-arale" src="{{sprite:arale-hi}}" alt="">
+        </div>
+        <div class="title-copy">
+          <p class="eyebrow">CTI Agent Academy</p>
+          <h1 class="game-title">情資官<br><span>特訓營</span></h1>
+          <p class="title-sub">七個關卡，玩懂內外部情資蒐集、脆弱性識別與風險導向處置。由 Allan 顧問與 AI 助理阿拉蕾語音帶路。</p>
+          <ul class="feats">
+            <li style="--c:var(--int)"><svg aria-hidden="true"><use href="#i-map"/></svg>7 個關卡</li>
+            <li style="--c:var(--ext)"><svg aria-hidden="true"><use href="#i-vol"/></svg>語音導覽</li>
+            <li style="--c:var(--vul)"><svg aria-hidden="true"><use href="#i-audit"/></svg>稽核大魔王</li>
+            <li style="--c:var(--ok)"><svg aria-hidden="true"><use href="#i-trophy"/></svg>結訓證書</li>
+          </ul>
+          <label class="name-field"><span>你的代號（會印在結訓證書上）</span><input id="nameInput" type="text" maxlength="12" autocomplete="nickname" placeholder="例如：情資小隊長"></label>
+          <div class="title-btns">
+            <button class="btn-big" type="button" data-act="start" id="startBtn"><svg aria-hidden="true"><use href="#i-play"/></svg><span>開始特訓</span></button>
+            <button class="btn-ghost" type="button" data-act="reset" id="resetBtn" hidden>重新開始</button>
+          </div>
+          <p class="credit">製作：<b>Allan顧問</b>，2027/10/17</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 任務地圖 -->
+    <section class="screen scr-map" id="scrMap" hidden>
+      <div class="wrap">
+        <header class="map-head">
+          <div>
+            <p class="eyebrow">Mission map</p>
+            <h2>任務地圖</h2>
+            <p>每關拿到 1 顆星以上，就能解鎖下一關。</p>
+          </div>
+          <div class="rank-card">
+            <span class="rank-name" id="rankName">見習情資員</span>
+            <span class="rank-stars"><b id="mapStars">0</b> / 21 ★</span>
+            <div class="rank-bar"><i id="rankFill"></i></div>
+            <span class="rank-next" id="rankNext"></span>
+          </div>
+        </header>
+        <div class="map-area" id="mapArea">
+          <svg class="map-path" id="mapPath" aria-hidden="true"><path class="base" id="pathBase" d=""/><path class="done" id="pathDone" d=""/></svg>
+          <ol class="map" id="mapNodes"></ol>
+        </div>
+        <footer class="map-foot">
+          <button class="btn-ghost sm" type="button" data-act="unlock" id="unlockBtn">講師模式：全部解鎖</button>
+          <button class="btn-big sm" type="button" data-act="cert" id="certBtn" hidden><svg aria-hidden="true"><use href="#i-trophy"/></svg>查看結訓證書</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- 關卡 -->
+    <section class="screen scr-level" id="scrLevel" hidden>
+      <div class="wrap">
+        <header class="lv-head">
+          <button class="icon-btn" type="button" data-act="to-map" aria-label="回任務地圖" title="回任務地圖（Esc）"><svg aria-hidden="true"><use href="#i-map"/></svg></button>
+          <div class="lv-titles"><span class="lv-tag" id="lvTag">LEVEL 1</span><h2 id="lvTitle">情資雷達</h2></div>
+          <div class="lv-meta">
+            <span class="meta" id="lvProg">1 / 12</span>
+            <span class="meta lives" id="lvLives" hidden></span>
+            <span class="meta combo" id="lvCombo" hidden></span>
+            <span class="meta score"><b id="lvScore">0</b> 分</span>
+          </div>
+        </header>
+        <div class="lv-progress"><i id="lvBar"></i></div>
+        <div class="lv-body" id="lvBody"></div>
+        <div class="feedback" id="fb" hidden>
+          <div class="fb-icon"><svg aria-hidden="true"><use href="#i-check"/></svg></div>
+          <div class="fb-copy"><b class="fb-title"></b><p class="fb-text"></p></div>
+          <button class="btn-big sm" type="button" data-act="next"><span>下一題</span><svg aria-hidden="true"><use href="#i-next"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 結果 -->
+    <section class="screen scr-result" id="scrResult" hidden>
+      <div class="res-card">
+        <p class="eyebrow" id="resTag">LEVEL 1 · CLEAR</p>
+        <h2 id="resTitle">情資雷達</h2>
+        <p class="res-verdict" id="resVerdict"></p>
+        <div class="res-stars" id="resStars"></div>
+        <div class="res-stats">
+          <div><b id="resScore">0</b><span>本次分數</span></div>
+          <div><b id="resAcc">0%</b><span>正確率</span></div>
+          <div><b id="resBest">0</b><span>最佳分數</span></div>
+        </div>
+        <div class="takeaways"><p class="mini-title">本關重點</p><ul class="list" id="resTake"></ul></div>
+        <div class="res-btns">
+          <button class="btn-ghost" type="button" data-act="retry"><svg aria-hidden="true"><use href="#i-replay"/></svg>再玩一次</button>
+          <button class="btn-ghost" type="button" data-act="to-map"><svg aria-hidden="true"><use href="#i-map"/></svg>回地圖</button>
+          <button class="btn-big" type="button" data-act="next-level" id="resNext"><span>下一關</span><svg aria-hidden="true"><use href="#i-next"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 結訓證書 -->
+    <section class="screen scr-cert" id="scrCert" hidden>
+      <div class="wrap">
+        <div class="cert-tools">
+          <label class="name-field"><span>證書上的名字</span><input id="certNameInput" type="text" maxlength="12" placeholder="輸入你的代號"></label>
+          <button class="btn-ghost" type="button" data-act="to-map"><svg aria-hidden="true"><use href="#i-map"/></svg>回地圖</button>
+        </div>
+        <article class="cert" aria-label="結訓證書">
+          <svg class="cert-seal" viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="3"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <path id="sealArc" d="M50 50 m-31 0 a31 31 0 1 1 62 0 a31 31 0 1 1 -62 0" fill="none"/>
+            <text><textPath href="#sealArc" startOffset="0">CTI AGENT ACADEMY · CERTIFIED ·</textPath></text>
+            <path d="M50 34l4.7 9.6 10.6 1.5-7.7 7.5 1.8 10.5L50 58.1l-9.4 5 1.8-10.5-7.7-7.5 10.6-1.5z" fill="currentColor"/>
+          </svg>
+          <p class="cert-en">CERTIFICATE OF COMPLETION</p>
+          <h2 class="cert-title">結訓證書</h2>
+          <p class="cert-line">茲證明</p>
+          <p class="cert-name" id="certName">未命名學員</p>
+          <p class="cert-body" id="certBody">完成「情資官特訓營」七大關卡訓練，具備內外部情資蒐集、脆弱性識別與風險導向處置的基本能力，並通過稽核關卡驗收。</p>
+          <div class="cert-stats">
+            <div><span>等級</span><b id="certRank"></b></div>
+            <div><span>星數</span><b id="certStars"></b></div>
+            <div><span>總分</span><b id="certScore"></b></div>
+            <div><span>結訓日期</span><b id="certDate"></b></div>
+          </div>
+          <div class="cert-sign">
+            <div><img src="{{sprite:allan-smile}}" alt="">Allan 顧問</div>
+            <div><img src="{{sprite:arale-wink}}" alt="">AI 助理 阿拉蕾</div>
+          </div>
+          <p class="cert-credit">製作：Allan顧問，2027/10/17</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="guide" id="guide">
+    <div class="g-host g-arale on" data-speaker="arale">
+      <div class="g-face holo-face"><img alt="AI 助理阿拉蕾" src="{{sprite:arale-laugh}}"></div>
+      <div class="bubble bubble--arale"><span class="bubble-name">AI 助理 阿拉蕾</span><span class="bubble-text">嗨！輸入你的代號，按「開始特訓」跟我一起闖關吧！</span></div>
+    </div>
+    <div class="g-host g-allan" data-speaker="allan">
+      <div class="g-face"><img alt="Allan 顧問" src="{{sprite:allan-smile}}"></div>
+      <div class="bubble bubble--allan"><span class="bubble-name">Allan 顧問</span><span class="bubble-text"></span></div>
+    </div>
+  </footer>
+</div>
+
+<div class="modal" id="introModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mcTitle">
+    <p class="eyebrow" id="mcTag">LEVEL 1</p>
+    <div class="mc-head"><svg aria-hidden="true"><use id="mcIcon" href="#i-radar"/></svg><h2 id="mcTitle">情資雷達</h2></div>
+    <p class="mc-goal" id="mcGoal"></p>
+    <div class="mc-grid">
+      <div><p class="mini-title">怎麼玩</p><ul class="list" id="mcHow"></ul></div>
+      <div><p class="mini-title">你會學到</p><ul class="list" id="mcLearn"></ul></div>
+    </div>
+    <div class="mc-btns">
+      <button class="btn-ghost" type="button" data-act="close-intro">返回地圖</button>
+      <button class="btn-big" type="button" data-act="go-level" id="goLevelBtn"><svg aria-hidden="true"><use href="#i-play"/></svg>開始挑戰</button>
+    </div>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<p class="sr-only" aria-live="polite" id="srLine"></p>
+
+<script>
+/*{{SCRIPT_JS}}*/
+/*{{AUDIO_JS}}*/
+</script>
+<script>
+(() => {
+'use strict';
+
+/* ================= 素材 ================= */
+const SPR = {
+  allan: {
+    smile: '{{sprite:allan-smile}}', laugh: '{{sprite:allan-laugh}}', think: '{{sprite:allan-think}}',
+    scratch: '{{sprite:allan-scratch}}', wow: '{{sprite:allan-wow}}', point: '{{sprite:allan-point}}',
+    wink: '{{sprite:allan-wink}}', shock: '{{sprite:allan-shock}}'
+  },
+  arale: {
+    laugh: '{{sprite:arale-laugh}}', think: '{{sprite:arale-think}}', wow: '{{sprite:arale-wow}}',
+    confused: '{{sprite:arale-confused}}', explain: '{{sprite:arale-explain}}', sad: '{{sprite:arale-sad}}',
+    wink: '{{sprite:arale-wink}}', fight: '{{sprite:arale-fight}}'
+  }
+};
+const VOICE = window.CTI_SCRIPT || {};
+const AUD = window.CTI_AUDIO || {};
+
+/* ================= 關卡資料 ================= */
+const LEVELS = [
+  { id: 'l1', type: 'sort', name: '情資雷達', icon: 'i-radar', color: 'var(--int)', accent: 'int',
+    learn: '分辨內部情資、外部情資與脆弱性識別',
+    goal: '雷達掃到 12 張情資卡，把每一張分到正確的類別。',
+    how: ['看卡片內容，點選下方分類，或按數字鍵 1～3', '連續答對有連擊加分'],
+    take: ['內部情資來自自家日誌、監控與人員通報', '外部情資來自政府、ISAC、原廠公告與媒體研究', '脆弱性識別是主動找出自家弱點：弱掃、滲透、健診、原碼檢測'] },
+  { id: 'l2', type: 'order', name: '生命週期拼圖', icon: 'i-cycle', color: 'var(--ok)', accent: 'ok',
+    learn: '掌握情資作業的六個步驟',
+    goal: '先排出情資生命週期的六個步驟，再判斷六項日常工作各屬於哪一步。',
+    how: ['第 1 回合：依序點選步驟方塊', '第 2 回合：為每項工作選出對應步驟'],
+    take: ['情資作業是循環：規劃 → 蒐集 → 處理 → 分析 → 分送 → 回饋', '對應 ISO/IEC 27002:2022 5.7 的作業活動', '回饋最常被忽略，卻是持續改善的關鍵'] },
+  { id: 'l3', type: 'triage', name: '情資洪流', icon: 'i-filter', color: 'var(--ext)', accent: 'ext',
+    learn: '用資產清冊判斷情資是否相關',
+    goal: '對照公司的資產清冊，判斷 10 則外部情資跟我們有沒有關係。',
+    how: ['先看資產清冊，再讀情資卡', '相關就建立處置單，不相關就記錄理由後歸檔'],
+    take: ['資產清冊（CMDB）是判斷情資是否相關的依據', '相關的情資要建立處置單，並追蹤到結案', '不相關也要記錄判斷理由，稽核才有證據'] },
+  { id: 'l4', type: 'method', name: '檢測工具箱', icon: 'i-scan', color: 'var(--vul)', accent: 'vul',
+    learn: '選對脆弱性識別方法',
+    goal: '看 8 個情境，從工具箱選出最適合的脆弱性識別方法。',
+    how: ['每題有四個選項，可按數字鍵 1～4', '答完會說明這個方法的用途'],
+    take: ['弱點掃描求廣，滲透測試求深', '原碼檢測在上線前從源頭擋，資安健診檢查是否已被入侵', '滲透測試前要取得授權並界定範圍（A.8.34）'] },
+  { id: 'l5', type: 'prio', name: '風險排序戰', icon: 'i-sort', color: 'var(--high)', accent: 'high',
+    learn: '以風險為基礎排定修補優先序',
+    goal: '弱點掃描找到 5 個弱點，幫它們排出 P1～P4 的處理優先序。',
+    how: ['每張卡片選一個優先序，全部選完再送出', '完全正確得 100 分，差一級得 40 分'],
+    take: ['CVSS 分數不等於處理優先序', '一起看：是否遭利用（KEV、EPSS）、資產重要性、曝險程度', '依 P1～P4 訂出修補時限並追蹤（時限為建議值）'] },
+  { id: 'l6', type: 'judge', name: '情資判官', icon: 'i-gavel', color: 'var(--violet)', accent: 'violet',
+    learn: '評估威脅程度並決定行動',
+    goal: '5 則情資，先判斷對組織的現況威脅程度，再選出最適當的第一步行動。',
+    how: ['每則情資分兩步作答', '威脅程度差一級可得部分分數'],
+    take: ['以可能性 × 衝擊評估對組織的現況威脅程度', '重大威脅要啟動事件應變，並依規定評估通報', '每筆情資都要有結論與後續行動'] },
+  { id: 'l7', type: 'boss', boss: true, name: '稽核大魔王', icon: 'i-audit', color: 'var(--vul)', accent: 'vul',
+    learn: 'Allan 稽核員出題，拿出正確的稽核證據',
+    goal: '稽核員 Allan 會問 6 個問題，請選出能證明「有做到」的證據。',
+    how: ['你有 3 面盾牌，答錯一題少一面', '盾牌用完就不及格；剩幾面盾牌就拿幾顆星'],
+    take: ['稽核看的是紀錄：來源、評估、處置、複測、管審', '「現行不影響」也需要判斷依據', '情資與弱點結果要進入管理審查（條文 9.3）'] }
+];
+
+const BINS = [
+  { key: 'int', label: '內部情資', sub: '日誌・監控・人員通報', icon: 'i-server', c: 'var(--int)' },
+  { key: 'ext', label: '外部情資', sub: '政府・ISAC・原廠・媒體', icon: 'i-globe', c: 'var(--ext)' },
+  { key: 'vul', label: '脆弱性識別', sub: '弱掃・滲透・健診・原碼', icon: 'i-bug', c: 'var(--vul)' }
+];
+const L1_CARDS = [
+  { t: '防火牆阻擋紀錄', d: 'FW DENY 203.0.113.45 → 10.10.1.20:3389，一小時 142 次', a: 'int', ic: 'i-net', ex: '自家網路設備產生的日誌，屬於內部情資（A.8.15）。' },
+  { t: 'AD 登入失敗紀錄', d: '事件 4625：帳號 svc_backup 連續失敗 27 次', a: 'int', ic: 'i-server', ex: '系統日誌是內部情資，可以及早發現暴力破解。' },
+  { t: '員工回報的可疑郵件', d: '財務同仁回報一封要求更改匯款帳號的郵件', a: 'int', ic: 'i-mail', ex: '人員通報是第一手的內部情資（A.6.8）。' },
+  { t: 'EDR 偵測告警', d: 'PC-FIN-07 執行可疑的 PowerShell 編碼指令', a: 'int', ic: 'i-endpoint', ex: '端點監控告警屬於內部情資（A.8.7、A.8.16）。' },
+  { t: '機房門禁異常', d: '22:47 非排班人員刷卡進入機房', a: 'int', ic: 'i-cam', ex: '實體安全監控紀錄也是內部情資（A.7.4）。' },
+  { t: 'NICS 漏洞警示公告', d: '國家資通安全研究院發布的漏洞警示', a: 'ext', ic: 'i-building', ex: '來自政府機關的公告，屬於外部情資（A.5.5）。' },
+  { t: 'TWCERT/CC 資安新聞', d: '台灣電腦網路危機處理暨協調中心發布的資安訊息', a: 'ext', ic: 'i-news', ex: '外部資安組織發布的訊息，屬於外部情資。' },
+  { t: 'CISA KEV 新增項目', d: '美國 CISA 公布的「已遭實際利用」漏洞清單', a: 'ext', ic: 'i-globe', ex: '國際漏洞情資，也是判斷修補優先序的重要依據。' },
+  { t: 'F-ISAC 分享的攻擊手法', d: '金融資安資訊分享與分析中心通報的新型攻擊', a: 'ext', ic: 'i-people', ex: '產業 ISAC 屬於外部情資，對應 A.5.6 與專業團體聯繫。' },
+  { t: '原廠 PSIRT 安全公告', d: '防火牆原廠發布的韌體漏洞公告', a: 'ext', ic: 'i-alert', ex: '原廠安全公告是外部情資，要對照自家設備型號。' },
+  { t: '每月內部弱點掃描報告', d: '掃描 120 台主機，發現 8 個高風險弱點', a: 'vul', ic: 'i-scan', ex: '主動檢測自家系統的弱點，屬於脆弱性識別（A.8.8）。' },
+  { t: '年度滲透測試結果', d: '測試團隊從官網一路取得內網伺服器權限', a: 'vul', ic: 'i-target', ex: '滲透測試驗證弱點能否被串連利用，屬於脆弱性識別。' },
+  { t: '原碼檢測報告', d: 'SAST 掃描發現 3 處 SQL 注入風險', a: 'vul', ic: 'i-code', ex: '原碼檢測在上線前找出程式弱點，屬於脆弱性識別。' },
+  { t: '資安健診報告', d: '檢視網路架構，以及端點與伺服器的惡意活動', a: 'vul', ic: 'i-shield', ex: '資安健診是脆弱性識別的方法之一。' },
+  { t: 'GCB 組態檢核結果', d: '15 台伺服器共 42 項設定不符基準', a: 'vul', ic: 'i-sliders', ex: '組態檢核找出設定上的弱點，屬於脆弱性識別（A.8.9）。' }
+];
+
+const STEPS = [
+  { name: '規劃方向', hint: '先決定要保護什麼、關注什麼' },
+  { name: '蒐集', hint: '從內外部來源取得資料' },
+  { name: '處理', hint: '整理、去重、翻譯資料' },
+  { name: '分析', hint: '判斷影響與優先序' },
+  { name: '分送', hint: '把結果交給需要的人' },
+  { name: '回饋', hint: '檢討成效並調整' }
+];
+const L2_ACTS = [
+  { q: '訂出要關注的資產與威脅類型，並指定負責人與蒐集頻率', a: 0, ex: '先定義情資需求、負責人與頻率，是「規劃方向」。' },
+  { q: '訂閱 NICS、TWCERT 公告，並把各系統日誌匯入 SIEM', a: 1, ex: '取得內外部資料來源，是「蒐集」。' },
+  { q: '把英文公告翻譯成摘要，並刪除重複的通報', a: 2, ex: '翻譯、摘要、去重，讓資料可以被分析，是「處理」。' },
+  { q: '比對資產清冊，判斷這個漏洞會不會影響本公司', a: 3, ex: '比對資產並判斷影響與優先序，是「分析」。' },
+  { q: '把處置建議寄給系統負責人，並列入資安工作月報', a: 4, ex: '把結果交給需要的人並納入報告，是「分送」。' },
+  { q: '檢討本季哪些情資來源真的有用，調整訂閱清單', a: 5, ex: '檢討成效並調整來源與需求，是「回饋」，也是持續改善的依據。' }
+];
+
+const CMDB = [
+  { k: 'vpn', icon: 'i-net', t: 'SSL VPN 設備（A 廠牌）×2', s: '對外服務・核心' },
+  { k: 'win', icon: 'i-server', t: 'Windows Server 2019', s: 'AD、檔案伺服器' },
+  { k: 'erp', icon: 'i-app', t: 'ERP 系統（Java）', s: '使用 Apache Log4j 2・含個資' },
+  { k: 'web', icon: 'i-globe', t: '官方網站（WordPress）', s: '對外服務' },
+  { k: 'm365', icon: 'i-cloud', t: 'Microsoft 365 郵件', s: '沒有自建 Exchange' },
+  { k: 'pc', icon: 'i-endpoint', t: '員工電腦 Windows 11', s: '瀏覽器統一使用 Chrome' }
+];
+const L3_FEED = [
+  { src: 'NICS', t: 'A 廠牌 SSL VPN 遠端程式碼執行漏洞，已遭利用', a: 'yes', k: 'vpn', ex: '公司有 2 台 A 廠牌 SSL VPN 對外服務，必須立即建立處置單。' },
+  { src: 'iThome', t: 'Exchange Server 重大漏洞遭大規模攻擊', a: 'no', ex: '公司使用 Microsoft 365，沒有自建 Exchange。記錄「未使用該產品」後歸檔。' },
+  { src: 'TWCERT/CC', t: 'Apache Log4j 2 遠端程式碼執行漏洞', a: 'yes', k: 'erp', ex: 'ERP 系統使用 Log4j 2，要確認版本並修補。' },
+  { src: '原廠公告', t: 'Chrome 零時差漏洞，已列入 CISA KEV', a: 'yes', k: 'pc', ex: '全公司電腦使用 Chrome，應盡快推送更新。' },
+  { src: 'iThome', t: '某品牌工控 PLC 韌體漏洞', a: 'no', ex: '資產清冊沒有工控設備，記錄理由後歸檔。' },
+  { src: 'NICS', t: 'WordPress 熱門外掛漏洞遭大量掃描', a: 'yes', k: 'web', ex: '官網使用 WordPress，要確認是否安裝該外掛並更新。' },
+  { src: 'TechNews', t: 'macOS 系統權限提升漏洞', a: 'no', ex: '公司電腦都是 Windows 11，此情資現行不影響。' },
+  { src: 'MSRC', t: 'Windows Server 權限提升漏洞，本月安全更新修補', a: 'yes', k: 'win', ex: 'AD 與檔案伺服器使用 Windows Server 2019，要排入修補。' },
+  { src: 'TWCERT/CC', t: '假冒 Microsoft 365 登入頁的釣魚活動', a: 'yes', k: 'm365', ex: '公司使用 Microsoft 365，應發布員工宣導並加強郵件過濾。' },
+  { src: '趨勢科技', t: '某廠牌 NAS 遭勒索軟體鎖定', a: 'no', ex: '資產清冊沒有該廠牌 NAS，記錄理由後歸檔。' }
+];
+
+const METHODS = {
+  scan: ['弱點掃描', 'i-scan'], web: ['網站弱點檢測', 'i-app'], pen: ['滲透測試', 'i-target'],
+  hc: ['資安健診', 'i-shield'], code: ['原碼檢測', 'i-code'], gcb: ['組態檢核', 'i-sliders'],
+  phish: ['社交工程演練', 'i-hook'], asset: ['資產盤點與攻擊面管理', 'i-box'], red: ['紅隊演練', 'i-flag']
+};
+const L4_CASES = [
+  { q: '每個月要確認所有伺服器，有沒有已知漏洞還沒修補。', o: ['scan', 'pen', 'red', 'phish'], ex: '弱點掃描以工具比對已知弱點，適合定期、大範圍執行。' },
+  { q: '想知道攻擊者能不能從官網一路打進內網，拿到 AD 管理權限。', o: ['pen', 'gcb', 'scan', 'code'], ex: '滲透測試模擬攻擊者串連弱點，驗證實際能被利用的程度。執行前要取得授權並界定範圍（A.8.34）。' },
+  { q: '網銀新功能下週上線，要在上線前找出程式碼裡的 SQL 注入。', o: ['code', 'hc', 'phish', 'gcb'], ex: '原碼檢測（SAST）在開發階段從源頭找出程式弱點，可整合進 CI/CD（A.8.28）。' },
+  { q: '懷疑公司電腦已被植入後門，想全面檢查有沒有惡意活動。', o: ['hc', 'code', 'gcb', 'phish'], ex: '資安健診會檢視網路、端點與伺服器的惡意活動，適合確認是否已被入侵。' },
+  { q: '新上線的伺服器，要確認設定符合 GCB 政府組態基準。', o: ['gcb', 'pen', 'phish', 'web'], ex: '組態檢核對照 GCB 或 CIS Benchmarks，找出不安全的設定（A.8.9）。' },
+  { q: '想了解員工面對釣魚郵件時的警覺性。', o: ['phish', 'scan', 'code', 'hc'], ex: '社交工程演練找出「人」的脆弱性，並追蹤點擊率與訓練成效（A.6.3）。' },
+  { q: '要清點公司對外曝露的網域、IP 與服務，避免有被遺忘的系統。', o: ['asset', 'code', 'phish', 'gcb'], ex: '資產盤點與攻擊面管理是所有檢測的前提：沒有清冊，就沒有檢測範圍（A.5.9）。' },
+  { q: '官網改版上線前，要從外部測試 XSS、存取控制等網頁弱點。', o: ['web', 'gcb', 'phish', 'hc'], ex: '網站弱點檢測針對 OWASP Top 10 等網頁風險，適合在上線前執行（A.8.29）。' }
+];
+
+const L5_FINDS = [
+  { t: '測試環境 Web｜SQL 注入', cvss: 9.1, kev: false, asset: '非核心', exp: '僅內部・測試環境', a: 4, ex: 'CVSS 最高，但在測試環境、未見利用、沒有對外曝險，可排程處理或直接下架。' },
+  { t: '員工電腦 Chrome｜記憶體破壞漏洞', cvss: 8.8, kev: true, asset: '一般', exp: '全公司端點', a: 2, ex: '已列入 KEV 且影響範圍大，應在 7 日內完成更新。' },
+  { t: '對外 SSL VPN｜遠端程式碼執行', cvss: 8.1, kev: true, asset: '核心系統', exp: '對外服務', a: 1, ex: '已遭利用＋對外＋核心系統，即使 CVSS 不是最高，也要最先處理。' },
+  { t: '內部 ERP｜權限提升', cvss: 6.5, kev: false, asset: '核心系統・含個資', exp: '僅內部', a: 3, ex: '核心系統含個資，但未見利用且只限內部，排入 30 日內修補。' },
+  { t: '官網 WordPress 外掛｜XSS', cvss: 6.1, kev: false, asset: '一般', exp: '對外服務', a: 3, ex: '雖然對外，但嚴重度中等、未見利用，排入 30 日內修補。' }
+];
+
+const LVL_OPTS = [
+  { label: '重大', sub: '可能性×衝擊 ≥ 20', lc: 'var(--vul)' },
+  { label: '高', sub: '12～19', lc: 'var(--high)' },
+  { label: '中', sub: '6～11', lc: 'var(--ext)' },
+  { label: '低', sub: '3～5', lc: 'var(--int)' },
+  { label: '現行不影響', sub: '1～2・與我們無關', lc: 'var(--dim)' }
+];
+const L6_CASES = [
+  { t: 'A 廠牌 SSL VPN 漏洞已遭大規模利用，本公司 2 台對外設備尚未更新。', L: 5, I: 5, lv: 0,
+    acts: ['啟動事件應變：立即修補或暫停服務，並檢視 VPN 登入紀錄', '排入下一季的維護窗口再更新', '記錄後歸檔即可'],
+    ex: '可能性 5 × 衝擊 5 = 25，屬重大。應啟動事件應變，並依規定時限評估是否通報。' },
+  { t: '同業傳出遭勒索軟體攻擊，入侵手法是釣魚郵件夾帶惡意巨集。', L: 3, I: 5, lv: 1,
+    acts: ['發布員工宣導，並加強郵件閘道過濾與偵測規則', '不是我們被攻擊，所以不用處理', '立即關閉公司所有電子郵件服務'],
+    ex: '可能性 3 × 衝擊 5 = 15，屬高。同業事件常是攻擊前兆，應立即強化防護並追蹤。' },
+  { t: '新型釣魚簡訊假冒物流通知，目前主要鎖定一般民眾。', L: 4, I: 2, lv: 2,
+    acts: ['在宣導中提醒同仁，並排入改善計畫追蹤', '立即啟動事件應變小組', '不予理會'],
+    ex: '可能性 4 × 衝擊 2 = 8，屬中。排入改善計畫，指定負責人與期限。' },
+  { t: '公司使用中的套件出現低風險漏洞，原廠將在下個版本修正。', L: 2, I: 2, lv: 3,
+    acts: ['持續觀察，納入例行更新排程', '立即停用該套件', '記錄為現行不影響後歸檔'],
+    ex: '可能性 2 × 衝擊 2 = 4，屬低。持續觀察並納入例行作業即可。' },
+  { t: '某款本公司沒有使用的產品，出現重大漏洞。', L: 1, I: 1, lv: 4,
+    acts: ['比對資產清冊確認未使用，寫下判斷理由後歸檔', '不用留下任何紀錄', '緊急採購該產品的修補服務'],
+    ex: '比對資產清冊確認未使用，屬現行不影響；但仍要寫下判斷理由，作為稽核證據。' }
+];
+
+const BOSS = [
+  { q: '你們的情資從哪些來源蒐集？由誰負責？多久蒐集一次？', o: ['情資來源清單與蒐集程序（含負責人、頻率）', '防毒軟體授權合約', '全公司員工通訊錄', '年度教育訓練簽到表'], ex: '情資作業要先定義來源、負責人與頻率，並寫成程序文件。' },
+  { q: '上個月公布的重大漏洞，你們怎麼評估對公司的影響？', o: ['每月外部情資彙整紀錄（含威脅程度與處置建議）', 'NICS 公告原文的列印本', 'IT 主管的口頭說明', '防火牆設定檔'], ex: '彙整紀錄要寫出對組織的現況威脅程度與處置建議，才看得出有評估。' },
+  { q: '這個高風險弱點已經修補了嗎？要怎麼證明？', o: ['處置單與修補後的複測報告', '弱點掃描的原始報告', '修補計畫草稿', '廠商報價單'], ex: '結案要有證據：處置紀錄加上修補後複測通過的結果。' },
+  { q: '你說這筆情資「現行不影響」，判斷的依據是什麼？', o: ['資產清冊比對結果與判斷理由紀錄', '主管口頭說沒問題', '網路新聞截圖', '沒有留下紀錄'], ex: '「現行不影響」也要有依據：比對資產清冊並寫下理由。' },
+  { q: '滲透測試開始前，有沒有取得授權並界定範圍？', o: ['滲透測試授權書與範圍確認文件', '測試廠商的公司簡介', '測試報告封面', '會議邀請信'], ex: 'A.8.34 要求稽核測試須事先規劃並取得授權，避免影響營運。' },
+  { q: '情資與弱點的結果，有沒有進到管理審查？', o: ['管理審查會議紀錄（含情資與弱點趨勢、KPI）', '資安月報草稿', 'IT 部門週會紀錄', '採購申請單'], ex: '條文 9.3 要求管理審查納入資安績效與內外部議題變化，情資與弱點結果應列入。' }
+];
+
+const RANKS = [
+  { min: 0, name: '見習情資員' },
+  { min: 7, name: '情資分析員' },
+  { min: 14, name: '資深情資分析師' },
+  { min: 19, name: '首席情資官', boss: true }
+];
+
+/* ================= 工具 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const root = document.documentElement;
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pad = n => String(n).padStart(2, '0');
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[(Math.random() * a.length) | 0];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icon = (id, cls) => '<svg' + (cls ? ' class="' + cls + '"' : '') + ' aria-hidden="true"><use href="#' + id + '"/></svg>';
+const starsHTML = n => '<span class="stars">' + [0, 1, 2].map(i => icon('i-star', i < n ? 'on' : '')).join('') + '</span>';
+
+/* ================= 存檔 ================= */
+const KEY = 'cti-academy-v1';
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
+const save = Object.assign({ name: '', stars: {}, best: {}, voice: true, sfx: true, unlockAll: false, certDate: '' }, load());
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* 無法存檔時仍可遊玩 */ } }
+const totalStars = () => LEVELS.reduce((a, l) => a + (save.stars[l.id] || 0), 0);
+const totalScore = () => LEVELS.reduce((a, l) => a + (save.best[l.id] || 0), 0);
+const bossCleared = () => (save.stars.l7 || 0) > 0;
+function rankInfo() {
+  const s = totalStars();
+  let cur = RANKS[0], next = null;
+  RANKS.forEach(r => { if (s >= r.min && (!r.boss || bossCleared())) cur = r; });
+  next = RANKS.find(r => RANKS.indexOf(r) > RANKS.indexOf(cur)) || null;
+  return { cur, next, stars: s };
+}
+const unlocked = i => save.unlockAll || i === 0 || (save.stars[LEVELS[i - 1].id] || 0) > 0;
+
+/* ================= 聲音 ================= */
+const audio = new Audio();
+audio.preload = 'auto';
+let voiceStop = null;
+let audioReady = false;
+let ac = null;
+function stopVoice() {
+  try { audio.pause(); } catch (e) { /* 忽略 */ }
+  if (voiceStop) { const f = voiceStop; voiceStop = null; f(); }
+}
+function playClip(src) {
+  return new Promise((resolve, reject) => {
+    const done = () => { if (voiceStop === done) voiceStop = null; resolve(); };
+    voiceStop = done;
+    audio.onended = done;
+    audio.onerror = () => { if (voiceStop === done) voiceStop = null; reject(new Error('audio')); };
+    audio.src = src;
+    const p = audio.play();
+    if (p && p.catch) p.catch(err => { if (voiceStop === done) voiceStop = null; reject(err); });
+  });
+}
+function unlockAudio() {
+  if (audioReady) return;
+  audioReady = true;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) { ac = new AC(); if (ac.resume) ac.resume(); }
+  } catch (e) { ac = null; }
+  const first = Object.values(AUD)[0];
+  if (!first) return;
+  try {
+    audio.muted = true;
+    audio.src = first.src;
+    const p = audio.play();
+    if (p && p.then) p.then(() => { if (!voiceStop) audio.pause(); audio.muted = false; }).catch(() => { audio.muted = false; });
+  } catch (e) { audio.muted = false; }
+}
+function tone(freqs, dur, type, gain) {
+  if (!save.sfx || !ac) return;
+  const t0 = ac.currentTime + .01;
+  freqs.forEach((f, i) => {
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = f;
+    const s = t0 + i * dur;
+    g.gain.setValueAtTime(0.0001, s);
+    g.gain.exponentialRampToValueAtTime(gain || .08, s + .015);
+    g.gain.exponentialRampToValueAtTime(0.0001, s + dur * 1.6);
+    o.connect(g); g.connect(ac.destination);
+    o.start(s); o.stop(s + dur * 1.7);
+  });
+}
+const SFX = {
+  click: () => tone([520], .05, 'square', .025),
+  ok: () => tone([660, 990], .08, 'triangle', .09),
+  ng: () => tone([240, 170], .12, 'sawtooth', .045),
+  combo: () => tone([660, 880, 1175], .06, 'triangle', .08),
+  clear: () => tone([523, 659, 784, 1047], .11, 'triangle', .1),
+  fail: () => tone([392, 330, 262], .16, 'triangle', .08),
+  hit: () => tone([180, 520, 780], .07, 'square', .06),
+  star: () => tone([1175], .09, 'sine', .08)
+};
+const sfx = name => { try { SFX[name](); } catch (e) { /* 忽略 */ } };
+
+/* ================= 角色導覽 ================= */
+const guide = { arale: $('.g-arale'), allan: $('.g-allan') };
+const srLine = $('#srLine');
+let sayId = 0;
+let seqId = 0;
+function setGuide(who, face) {
+  const img = $('.g-face img', guide[who]);
+  const src = SPR[who][face] || Object.values(SPR[who])[0];
+  if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+}
+async function typeInto(el, text, ms, my) {
+  if (reduce) { el.textContent = text; return; }
+  const step = Math.max(14, Math.min(70, ms / Math.max(1, text.length)));
+  for (let n = 1; n <= text.length; n++) {
+    if (my !== sayId) { el.textContent = text; return; }
+    el.textContent = text.slice(0, n);
+    await sleep(step);
+  }
+}
+async function say(who, face, text, clip, fromSeq) {
+  if (!fromSeq) seqId++;
+  const my = ++sayId;
+  stopVoice();
+  const c = clip ? AUD[clip] : null;
+  const ms = c ? c.dur * 1000 : 900 + text.length * 110;
+  const host = guide[who];
+  Object.values(guide).forEach(h => { h.classList.toggle('on', h === host); h.classList.remove('talking'); });
+  setGuide(who, face);
+  host.classList.add('talking');
+  if (who === 'allan' && G.bossUI) G.bossUI.say(face, text);
+  srLine.textContent = (who === 'allan' ? 'Allan 顧問：' : '阿拉蕾：') + text;
+  typeInto($('.bubble-text', host), text, Math.min(ms * .8, text.length * 60), my);
+  if (save.voice && c && audioReady) {
+    try { await playClip(c.src); } catch (e) { await sleep(ms); }
+  } else {
+    await sleep(ms);
+  }
+  if (my === sayId) host.classList.remove('talking');
+}
+function sayLine(group, n, fromSeq) {
+  const l = (VOICE[group] || [])[n];
+  if (!l) return Promise.resolve();
+  return say(l[0], l[1], l[2], group + '_' + pad(n + 1), fromSeq);
+}
+async function sayGroups(groups) {
+  const my = ++seqId;
+  for (const g of groups) {
+    const n = (VOICE[g] || []).length;
+    for (let i = 0; i < n; i++) {
+      if (my !== seqId) return;
+      await sayLine(g, i, true);
+      if (my !== seqId) return;
+      await sleep(250);
+    }
+  }
+}
+function sayRandom(group) {
+  const n = (VOICE[group] || []).length;
+  if (n) sayLine(group, (Math.random() * n) | 0);
+}
+
+/* ================= 畫面切換 ================= */
+const G = { token: 0, lv: null, score: 0, streak: 0, correct: 0, total: 0, lives: 0, bossUI: null, screen: 'title', introShown: false };
+const stage = $('#stage');
+const screens = { title: $('#scrTitle'), map: $('#scrMap'), level: $('#scrLevel'), result: $('#scrResult'), cert: $('#scrCert') };
+function show(name) {
+  Object.keys(screens).forEach(k => { screens[k].hidden = k !== name; });
+  G.screen = name;
+  stage.scrollTop = 0;
+  if (name === 'map') requestAnimationFrame(drawPath);
+}
+function setAccent(a) { root.dataset.accent = a || 'int'; }
+function updateHud() {
+  const r = rankInfo();
+  $('#hudRank').textContent = r.cur.name;
+  $('#hudStars').textContent = r.stars;
+  $('#btnVoice').setAttribute('aria-pressed', save.voice ? 'true' : 'false');
+  $('#btnSfx').setAttribute('aria-pressed', save.sfx ? 'true' : 'false');
+}
+
+/* ================= 任務地圖 ================= */
+function renderMap() {
+  const ol = $('#mapNodes');
+  ol.innerHTML = '';
+  let nextSet = false;
+  LEVELS.forEach((lv, i) => {
+    const st = save.stars[lv.id] || 0;
+    const open = unlocked(i);
+    const isNext = open && st === 0 && !nextSet;
+    if (isNext) nextSet = true;
+    const li = document.createElement('li');
+    li.className = 'node' + (open ? '' : ' locked') + (st ? ' cleared' : '') + (isNext ? ' next' : '') + (lv.boss ? ' boss' : '');
+    li.dataset.n = i + 1;
+    li.style.setProperty('--c', lv.color);
+    const top = '<span class="node-top"><span class="node-num">' + (lv.boss ? 'FINAL · BOSS' : 'LEVEL ' + (i + 1)) + '</span>' + (open ? '' : icon('i-lock', 'node-lock')) + '</span>';
+    const inner = lv.boss
+      ? top + '<span class="boss-face"><img src="' + SPR.allan.point + '" alt=""></span><span class="boss-copy"><b class="node-name">' + lv.name + '</b><span class="node-learn">' + lv.learn + '</span>' + starsHTML(st) + '</span>'
+      : top + icon(lv.icon, 'node-ic') + '<b class="node-name">' + lv.name + '</b><span class="node-learn">' + lv.learn + '</span>' + starsHTML(st);
+    li.innerHTML = '<button class="node-btn" type="button" data-level="' + lv.id + '"' + (open ? '' : ' aria-disabled="true"') + ' aria-label="第 ' + (i + 1) + ' 關 ' + lv.name + '，' + st + ' 顆星' + (open ? '' : '，尚未解鎖') + '">' + inner + '</button>';
+    ol.appendChild(li);
+  });
+  const r = rankInfo();
+  $('#rankName').textContent = r.cur.name;
+  $('#mapStars').textContent = r.stars;
+  $('#rankFill').style.width = (r.stars / 21 * 100) + '%';
+  $('#rankNext').textContent = r.next
+    ? '再拿 ' + Math.max(0, r.next.min - r.stars) + ' 顆星' + (r.next.boss ? '並通過稽核大魔王' : '') + '，升級為「' + r.next.name + '」'
+    : '已達最高等級！';
+  $('#unlockBtn').textContent = save.unlockAll ? '關閉講師模式' : '講師模式：全部解鎖';
+  $('#certBtn').hidden = !bossCleared();
+  updateHud();
+  requestAnimationFrame(drawPath);
+}
+function drawPath() {
+  if (G.screen !== 'map') return;
+  const area = $('#mapArea');
+  const r0 = area.getBoundingClientRect();
+  const nodes = $$('.node', area).sort((a, b) => a.dataset.n - b.dataset.n);
+  const pts = nodes.map(li => { const r = li.getBoundingClientRect(); return [r.left - r0.left + r.width / 2, r.top - r0.top + r.height / 2]; });
+  const svg = $('#mapPath');
+  svg.setAttribute('viewBox', '0 0 ' + Math.max(1, r0.width) + ' ' + Math.max(1, r0.height));
+  const d = list => list.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  $('#pathBase').setAttribute('d', d(pts));
+  let done = 0;
+  LEVELS.forEach((l, i) => { if ((save.stars[l.id] || 0) > 0 && i === done) done++; });
+  $('#pathDone').setAttribute('d', done ? d(pts.slice(0, Math.min(pts.length, done + 1))) : '');
+}
+if (window.ResizeObserver) new ResizeObserver(drawPath).observe($('#mapArea'));
+
+/* ================= 關卡說明 ================= */
+let introLevel = null;
+function openIntro(lv) {
+  introLevel = lv;
+  const i = LEVELS.indexOf(lv);
+  const card = $('#introModal .modal-card');
+  card.style.setProperty('--c', lv.color);
+  $('#mcTag').textContent = lv.boss ? 'FINAL · BOSS' : 'LEVEL ' + (i + 1);
+  $('#mcIcon').setAttribute('href', '#' + lv.icon);
+  $('#mcTitle').textContent = lv.name;
+  $('#mcGoal').textContent = lv.goal;
+  $('#mcHow').innerHTML = lv.how.map(t => '<li>' + icon('i-dot') + '<span>' + esc(t) + '</span></li>').join('');
+  $('#mcLearn').innerHTML = lv.take.map(t => '<li>' + icon('i-check') + '<span>' + esc(t) + '</span></li>').join('');
+  $('#introModal').hidden = false;
+  setAccent(lv.accent);
+  $('#goLevelBtn').focus();
+}
+function closeIntro() { $('#introModal').hidden = true; introLevel = null; setAccent('int'); }
+
+/* ================= 關卡共用 ================= */
+let pending = null;
+function waitFor(setup) {
+  return new Promise(res => {
+    let cleanup = null;
+    const done = v => { if (pending === done) pending = null; if (cleanup) cleanup(); res(v); };
+    pending = done;
+    cleanup = setup(done);
+  });
+}
+function abortWait() { if (pending) { const p = pending; pending = null; p(null); } }
+const alive = my => my === G.token && G.screen === 'level';
+function waitPick(container, sel) {
+  return waitFor(done => {
+    const h = e => {
+      const b = e.target.closest(sel || '.opt');
+      if (b && !b.disabled && container.contains(b)) { sfx('click'); done(b); }
+    };
+    container.addEventListener('click', h);
+    return () => container.removeEventListener('click', h);
+  });
+}
+function setProg(i, n) {
+  $('#lvProg').textContent = Math.min(i + 1, n) + ' / ' + n;
+  $('#lvBar').style.width = (i / n * 100) + '%';
+}
+function setLives(n) {
+  const el = $('#lvLives');
+  if (n == null) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = [0, 1, 2].map(i => icon('i-shieldfill', i < n ? '' : 'off')).join('');
+  el.setAttribute('aria-label', '剩下 ' + n + ' 面盾牌');
+}
+function popPts(text, anchor, bad) {
+  if (!anchor) return;
+  const r = anchor.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'pts' + (bad ? ' bad' : '');
+  el.textContent = text;
+  el.style.left = (r.left + r.width / 2) + 'px';
+  el.style.top = (r.top + 4) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+function addPoints(pts, anchor) {
+  G.score += pts;
+  $('#lvScore').textContent = G.score;
+  if (pts > 0) popPts('+' + pts, anchor);
+}
+function showCombo() {
+  const el = $('#lvCombo');
+  if (G.streak >= 2) {
+    el.hidden = false;
+    el.textContent = '連擊 ×' + G.streak;
+    el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  } else el.hidden = true;
+}
+function right(anchor, quiet) {
+  G.correct += 1;
+  G.streak += 1;
+  const bonus = Math.min(G.streak - 1, 4) * 10;
+  addPoints(100 + bonus, anchor);
+  showCombo();
+  if (G.streak >= 3 && G.streak % 3 === 0) sfx('combo'); else sfx('ok');
+  if (!quiet && (G.streak % 3 === 0 || Math.random() < .3)) sayRandom('ok');
+}
+function partial(anchor, w) {
+  G.correct += w;
+  G.streak = 0;
+  showCombo();
+  addPoints(Math.round(100 * w), anchor);
+  sfx('star');
+}
+function wrong(anchor, quiet) {
+  G.streak = 0;
+  showCombo();
+  sfx('ng');
+  if (anchor) popPts('+0', anchor, true);
+  if (!quiet) sayRandom('ng');
+}
+function feedback(kind, title, text, btn) {
+  const fb = $('#fb');
+  fb.className = 'feedback ' + kind;
+  $('.fb-icon use', fb).setAttribute('href', kind === 'ng' ? '#i-x' : kind === 'near' ? '#i-dot' : '#i-check');
+  $('.fb-title', fb).textContent = title;
+  $('.fb-text', fb).textContent = text;
+  $('[data-act="next"] span', fb).textContent = btn || '下一題';
+  fb.hidden = false;
+  requestAnimationFrame(() => fb.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }));
+  const nextBtn = $('[data-act="next"]', fb);
+  nextBtn.focus({ preventScroll: true });
+  return waitFor(done => {
+    const h = () => { sfx('click'); done(true); };
+    nextBtn.addEventListener('click', h);
+    return () => nextBtn.removeEventListener('click', h);
+  }).then(v => { fb.hidden = true; return v; });
+}
+function optHTML(o, k) {
+  return '<button class="opt" type="button" data-i="' + k + '" data-key="' + (k + 1) + '"' + (o.c ? ' style="--c:' + o.c + '"' : '') + (o.lc ? ' style="--lc:' + o.lc + '"' : '') + '>'
+    + (o.icon ? icon(o.icon) : '') + '<span class="opt-txt"><b>' + esc(o.label) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span><kbd>' + (k + 1) + '</kbd></button>';
+}
+/* 通用選擇題：q = { head, opts, answer, explain, optCls, layout, partial(k), after(k, w, btn) } */
+async function choiceRound(my, q, i, n) {
+  const body = $('#lvBody');
+  setProg(i, n);
+  const opts = '<div class="opts ' + (q.optCls || '') + '">' + q.opts.map(optHTML).join('') + '</div>';
+  body.innerHTML = q.layout ? q.layout(opts) : (q.head || '') + opts;
+  const first = body.firstElementChild;
+  if (first && !reduce) { first.classList.remove('enter'); void first.offsetWidth; first.classList.add('enter'); }
+  const b = await waitPick(body);
+  if (!b || !alive(my)) return null;
+  const k = +b.dataset.i;
+  const w = k === q.answer ? 1 : (q.partial ? q.partial(k) : 0);
+  $$('.opt', body).forEach((x, j) => { x.disabled = true; if (j === q.answer) x.classList.add('answer'); });
+  b.classList.add(w === 1 ? 'right' : 'wrong');
+  G.total += 1;
+  if (w === 1) right(b, q.quiet); else if (w > 0) partial(b, w); else wrong(b, q.quiet);
+  if (q.after) q.after(k, w, b);
+  const title = w === 1 ? pick(['答對了！', '完全正確！', '漂亮！']) : w > 0 ? '接近了！正確答案：' + q.opts[q.answer].label : '正確答案：' + q.opts[q.answer].label;
+  const ok = await feedback(w === 1 ? 'ok' : w > 0 ? 'near' : 'ng', title, q.explain, i >= n - 1 ? '看結果' : '下一題');
+  if (!ok || !alive(my)) return null;
+  return w;
+}
+
+/* ================= 七種玩法 ================= */
+const IMPL = {};
+
+/* 第 1 關：情資卡分類 */
+IMPL.sort = async my => {
+  const cards = shuffle(L1_CARDS).slice(0, 12);
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    const ans = BINS.findIndex(b => b.key === c.a);
+    const w = await choiceRound(my, {
+      head: '<div class="card-zone"><article class="icard">' + icon(c.ic, 'ic-big') + '<p class="q-tag">情資卡 ' + (i + 1) + ' / ' + cards.length + '</p><h3>' + esc(c.t) + '</h3><p>' + esc(c.d) + '</p></article></div>',
+      opts: BINS, optCls: 'bins cols-3', answer: ans, explain: c.ex,
+      after: (k, wt, btn) => {
+        const card = $('#lvBody .icard');
+        if (!card || reduce) return;
+        if (wt === 1) {
+          const a = card.getBoundingClientRect(), t = btn.getBoundingClientRect();
+          card.style.transform = 'translate(' + (t.left + t.width / 2 - a.left - a.width / 2) + 'px,' + (t.top + t.height / 2 - a.top - a.height / 2) + 'px) scale(.25)';
+          card.classList.add('fly');
+        } else card.classList.add('shake');
+      }
+    }, i, cards.length);
+    if (w === null) return null;
+  }
+  return { acc: G.correct / G.total };
+};
+
+/* 第 2 關：生命週期 */
+IMPL.order = async my => {
+  const body = $('#lvBody');
+  const total = 1 + L2_ACTS.length;
+  setProg(0, total);
+  const tiles = shuffle(STEPS.map((s, i) => Object.assign({ i }, s)));
+  body.innerHTML = '<div class="qcard enter"><p class="q-tag">第 1 回合</p><h3>依照順序，點選情資生命週期的六個步驟</h3><p class="q-sub">從第一步開始，一直到形成循環的最後一步。</p></div>'
+    + '<ol class="slots">' + STEPS.map((s, i) => '<li class="slot' + (i === 0 ? ' next' : '') + '" data-i="' + i + '"><span>' + pad(i + 1) + '</span><b></b></li>').join('') + '</ol>'
+    + '<div class="tiles">' + tiles.map((t, k) => '<button class="tile" type="button" data-step="' + t.i + '" data-key="' + (k + 1) + '">' + esc(t.name) + '<kbd>' + (k + 1) + '</kbd></button>').join('') + '</div>';
+  let next = 0, mistakes = 0;
+  while (next < STEPS.length) {
+    const b = await waitPick(body, '.tile');
+    if (!b || !alive(my)) return null;
+    if (+b.dataset.step === next) {
+      const slot = $('.slot[data-i="' + next + '"]', body);
+      $('b', slot).textContent = STEPS[next].name;
+      slot.classList.remove('next');
+      slot.classList.add('filled');
+      b.classList.add('used');
+      b.disabled = true;
+      sfx('ok');
+      addPoints(50, slot);
+      next += 1;
+      const ns = $('.slot[data-i="' + next + '"]', body);
+      if (ns) ns.classList.add('next');
+    } else {
+      mistakes += 1;
+      b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+      sfx('ng');
+      if (mistakes === 2 || mistakes === 4) say('arale', 'think', '提示：第 ' + (next + 1) + ' 步是「' + STEPS[next].name + '」，' + STEPS[next].hint + '。');
+    }
+  }
+  const r1 = Math.max(0, STEPS.length - mistakes);
+  G.correct += r1;
+  G.total += STEPS.length;
+  if (!mistakes) sayRandom('ok');
+  const ok = await feedback(mistakes ? 'near' : 'ok', mistakes ? '排序完成，失誤 ' + mistakes + ' 次' : '完美排序！',
+    '情資生命週期：規劃方向 → 蒐集 → 處理 → 分析 → 分送 → 回饋，再回到規劃，形成持續改善的循環（ISO/IEC 27002:2022 5.7）。', '進入第 2 回合');
+  if (!ok || !alive(my)) return null;
+  const acts = shuffle(L2_ACTS);
+  for (let i = 0; i < acts.length; i++) {
+    const a = acts[i];
+    const w = await choiceRound(my, {
+      head: '<div class="qcard"><p class="q-tag">第 2 回合・工作 ' + (i + 1) + ' / ' + acts.length + '</p><h3>' + esc(a.q) + '</h3><p class="q-sub">這項工作屬於哪一個步驟？</p></div>',
+      opts: STEPS.map(s => ({ label: s.name })), optCls: 'opts-6', answer: a.a, explain: a.ex
+    }, i + 1, total);
+    if (w === null) return null;
+  }
+  return { acc: G.correct / G.total };
+};
+
+/* 第 3 關：資產清冊過濾 */
+IMPL.triage = async my => {
+  const items = shuffle(L3_FEED);
+  const opts = [
+    { label: '相關：建立處置單', sub: '追蹤到修補或緩解完成', icon: 'i-alert', c: 'var(--vul)' },
+    { label: '不相關：記錄理由後歸檔', sub: '寫下比對資產清冊的結果', icon: 'i-doc', c: 'var(--dim)' }
+  ];
+  const cmdb = '<aside class="cmdb"><p class="mini-title">本公司資產清冊（CMDB）</p><ul>' + CMDB.map(c => '<li data-k="' + c.k + '">' + icon(c.icon) + '<span><b>' + esc(c.t) + '</b><small>' + esc(c.s) + '</small></span></li>').join('') + '</ul></aside>';
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const w = await choiceRound(my, {
+      layout: o => '<div class="triage">' + cmdb + '<div class="feed"><div class="qcard" style="padding:0;border:0;background:none"><article class="icard"><span class="src-tag">' + esc(it.src) + '</span><p class="q-tag">情資 ' + (i + 1) + ' / ' + items.length + '</p><h3>' + esc(it.t) + '</h3><p>跟我們有關係嗎？</p></article></div>' + o + '</div></div>',
+      opts, optCls: 'cols-2', answer: it.a === 'yes' ? 0 : 1, explain: it.ex,
+      after: () => {
+        const box = $('#lvBody .cmdb');
+        if (it.k) { const row = $('li[data-k="' + it.k + '"]', box); if (row) row.classList.add('hit'); }
+        else box.classList.add('none');
+      }
+    }, i, items.length);
+    if (w === null) return null;
+  }
+  return { acc: G.correct / G.total };
+};
+
+/* 第 4 關：檢測工具箱 */
+IMPL.method = async my => {
+  const cases = shuffle(L4_CASES);
+  for (let i = 0; i < cases.length; i++) {
+    const c = cases[i];
+    const keys = shuffle(c.o);
+    const w = await choiceRound(my, {
+      head: '<div class="qcard"><p class="q-tag">情境 ' + (i + 1) + ' / ' + cases.length + '</p><h3>' + esc(c.q) + '</h3><p class="q-sub">應該從工具箱拿出哪一項？</p></div>',
+      opts: keys.map(k => ({ label: METHODS[k][0], icon: METHODS[k][1] })), optCls: 'cols-2',
+      answer: keys.indexOf(c.o[0]), explain: c.ex
+    }, i, cases.length);
+    if (w === null) return null;
+  }
+  return { acc: G.correct / G.total };
+};
+
+/* 第 5 關：風險排序 */
+IMPL.prio = async my => {
+  const body = $('#lvBody');
+  setProg(0, 1);
+  const finds = L5_FINDS.slice();
+  body.innerHTML = '<div class="qcard enter"><p class="q-tag">弱點掃描報告（範例）</p><h3>幫這 5 個弱點排出處理優先序</h3><p class="q-sub">依 CVSS 由高到低列出。別只看分數！一起考慮是否遭利用、資產重要性與曝險程度。</p>'
+    + '<ul class="legend"><li><span class="pc p1">P1</span>72 小時內</li><li><span class="pc p2">P2</span>7 日內</li><li><span class="pc p3">P3</span>30 日內</li><li><span class="pc p4">P4</span>90 日內或依排程</li></ul></div>'
+    + '<div class="fcards">' + finds.map((f, k) => '<article class="fcard" data-k="' + k + '"><div><h3>' + esc(f.t) + '</h3><div class="fmeta"><span class="cvss">CVSS ' + f.cvss.toFixed(1) + '</span><span class="tagc' + (f.kev ? ' hot' : '') + '">' + (f.kev ? '已列入 KEV' : '未見利用') + '</span><span class="tagc">' + esc(f.asset) + '</span><span class="tagc">' + esc(f.exp) + '</span></div></div>'
+      + '<div class="pbtns" role="group" aria-label="選擇優先序">' + [1, 2, 3, 4].map(p => '<button type="button" class="pbtn p' + p + '" data-p="' + p + '" aria-pressed="false">P' + p + '</button>').join('') + '</div></article>').join('') + '</div>'
+    + '<div class="prio-go"><button class="btn-big" type="button" id="prioGo" disabled>送出排序</button></div>';
+  const chosen = {};
+  const go = $('#prioGo', body);
+  const onPick = e => {
+    const b = e.target.closest('.pbtn');
+    if (!b || b.disabled) return;
+    sfx('click');
+    const card = b.closest('.fcard');
+    $$('.pbtn', card).forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    chosen[card.dataset.k] = +b.dataset.p;
+    go.disabled = Object.keys(chosen).length < finds.length;
+  };
+  body.addEventListener('click', onPick);
+  const ok = await waitFor(done => { const h = () => { sfx('click'); done(true); }; go.addEventListener('click', h); return () => go.removeEventListener('click', h); });
+  body.removeEventListener('click', onPick);
+  if (!ok || !alive(my)) return null;
+  go.closest('.prio-go').hidden = true;
+  $$('.pbtn', body).forEach(b => { b.disabled = true; });
+  let exact = 0;
+  for (let k = 0; k < finds.length; k++) {
+    const f = finds[k];
+    const card = $('.fcard[data-k="' + k + '"]', body);
+    const diff = Math.abs((chosen[k] || 0) - f.a);
+    const cls = diff === 0 ? 'ok' : diff === 1 ? 'near' : 'ng';
+    G.total += 1;
+    if (diff === 0) { exact += 1; G.correct += 1; addPoints(100, card); }
+    else if (diff === 1) { G.correct += .4; addPoints(40, card); }
+    card.classList.add(cls);
+    const v = document.createElement('p');
+    v.className = 'verdict ' + cls;
+    v.innerHTML = '<b>正解 P' + f.a + (diff === 0 ? '　答對' : '　你選 P' + chosen[k]) + '</b><span>' + esc(f.ex) + '</span>';
+    card.appendChild(v);
+    sfx(diff === 0 ? 'ok' : diff === 1 ? 'star' : 'ng');
+    await sleep(reduce ? 0 : 380);
+    if (!alive(my)) return null;
+  }
+  setProg(1, 1);
+  if (exact >= 4) sayRandom('ok'); else sayRandom('ng');
+  const fin = await feedback(exact === finds.length ? 'ok' : exact >= 3 ? 'near' : 'ng', '排對 ' + exact + ' / ' + finds.length + ' 個',
+    '重點：測試環境的 SQL 注入 CVSS 最高（9.1），卻是最後處理；對外、已遭利用的 SSL VPN（CVSS 8.1）才是第一優先。', '看結果');
+  if (!fin || !alive(my)) return null;
+  return { acc: G.correct / G.total };
+};
+
+/* 第 6 關：情資判官 */
+IMPL.judge = async my => {
+  const cases = shuffle(L6_CASES);
+  const n = cases.length * 2;
+  for (let i = 0; i < cases.length; i++) {
+    const c = cases[i];
+    const card = '<div class="qcard"><p class="q-tag">情資 ' + (i + 1) + ' / ' + cases.length + '</p><h3>' + esc(c.t) + '</h3>';
+    const w1 = await choiceRound(my, {
+      head: card + '<p class="q-sub">第一步：對組織的現況威脅程度是？</p></div>',
+      opts: LVL_OPTS, optCls: 'lvl-opts', answer: c.lv, explain: c.ex,
+      partial: k => Math.abs(k - c.lv) === 1 ? .4 : 0
+    }, i * 2, n);
+    if (w1 === null) return null;
+    const acts = shuffle(c.acts.map((t, k) => ({ t, ok: k === 0 })));
+    const w2 = await choiceRound(my, {
+      head: card + '<p class="q-sub">第二步：威脅程度「' + LVL_OPTS[c.lv].label + '」，最適當的第一步行動是？</p></div>',
+      opts: acts.map(a => ({ label: a.t })), optCls: 'cols-3', answer: acts.findIndex(a => a.ok),
+      explain: '每筆情資都要有結論與後續行動，並留下紀錄。'
+    }, i * 2 + 1, n);
+    if (w2 === null) return null;
+  }
+  return { acc: G.correct / G.total };
+};
+
+/* 第 7 關：稽核大魔王 */
+IMPL.boss = async my => {
+  const body = $('#lvBody');
+  G.lives = 3;
+  setLives(3);
+  let hp = BOSS.length;
+  body.innerHTML = '<div class="boss"><aside class="auditor"><div class="aud-face" id="audFace"><img id="audImg" src="' + SPR.allan.think + '" alt="稽核員 Allan 顧問"></div>'
+    + '<div><b class="aud-name">稽核員 Allan</b><p class="aud-say" id="audSay">開始稽核。</p></div>'
+    + '<div class="hp" id="hp">' + BOSS.map(() => '<i></i>').join('') + '</div><span class="hp-label">待回應的稽核問題 <b id="hpN">' + hp + '</b></span></aside><div class="boss-main" id="bossMain"></div></div>';
+  G.bossUI = {
+    say: (face, text) => {
+      const img = $('#audImg');
+      if (img) img.src = SPR.allan[face] || SPR.allan.think;
+      const s = $('#audSay');
+      if (s) s.textContent = text;
+    }
+  };
+  const main = $('#bossMain');
+  for (let i = 0; i < BOSS.length; i++) {
+    const q = BOSS[i];
+    const opts = shuffle(q.o.map((t, k) => ({ t, ok: k === 0 })));
+    setProg(i, BOSS.length);
+    main.innerHTML = '<div class="boss-q enter"><span class="bq-name">稽核提問 ' + (i + 1) + ' / ' + BOSS.length + '</span><p class="bq-text">' + esc(q.q) + '</p></div>'
+      + '<div class="opts docs cols-2">' + opts.map((o, k) => optHTML({ label: o.t, icon: 'i-doc' }, k)).join('') + '</div>';
+    sayLine('boss', i);
+    const b = await waitPick(main);
+    if (!b || !alive(my)) return null;
+    const k = +b.dataset.i;
+    const good = opts[k].ok;
+    $$('.opt', main).forEach((x, j) => { x.disabled = true; if (opts[j].ok) x.classList.add('answer'); });
+    b.classList.add(good ? 'right' : 'wrong');
+    G.total += 1;
+    const face = $('#audFace');
+    face.classList.remove('hit', 'miss'); void face.offsetWidth;
+    if (good) {
+      G.correct += 1;
+      hp -= 1;
+      $$('#hp i')[hp].classList.add('off');
+      $('#hpN').textContent = hp;
+      face.classList.add('hit');
+      addPoints(150, b);
+      sfx('hit');
+      sayRandom('hit');
+    } else {
+      G.lives -= 1;
+      setLives(G.lives);
+      face.classList.add('miss');
+      $('#scrLevel .wrap').classList.remove('screen-shake'); void stage.offsetWidth; $('#scrLevel .wrap').classList.add('screen-shake');
+      popPts('盾牌 −1', b, true);
+      sfx('ng');
+      sayRandom('miss');
+    }
+    const last = G.lives === 0 || i === BOSS.length - 1;
+    const ok = await feedback(good ? 'ok' : 'ng', good ? '證據有效！這個稽核問題結案' : '證據不足！應該提出：' + q.o[0], q.ex, last ? '看結果' : '下一題');
+    if (!ok || !alive(my)) return null;
+    if (G.lives === 0) return { acc: G.correct / G.total, boss: true, failed: true };
+  }
+  return { acc: G.correct / G.total, boss: true, lives: G.lives };
+};
+
+/* ================= 關卡流程 ================= */
+async function startLevel(id) {
+  const lv = LEVELS.find(l => l.id === id);
+  if (!lv) return;
+  abortWait();
+  const my = ++G.token;
+  Object.assign(G, { lv, score: 0, streak: 0, correct: 0, total: 0, lives: 0, bossUI: null });
+  closeIntro();
+  setAccent(lv.accent);
+  show('level');
+  const i = LEVELS.indexOf(lv);
+  $('#lvTag').textContent = lv.boss ? 'FINAL · BOSS' : 'LEVEL ' + (i + 1);
+  $('#lvTitle').textContent = lv.name;
+  $('#lvScore').textContent = '0';
+  $('#lvCombo').hidden = true;
+  $('#fb').hidden = true;
+  $('#lvBody').innerHTML = '';
+  setLives(null);
+  Object.values(guide).forEach(h => { $('.bubble-text', h).textContent = ''; });
+  sayGroups([lv.id]);
+  const res = await IMPL[lv.type](my);
+  if (!res || !alive(my)) return;
+  finishLevel(lv, res);
+}
+function finishLevel(lv, res) {
+  G.bossUI = null;
+  const stars = res.boss
+    ? (res.failed ? 0 : res.lives)
+    : res.acc >= .9 ? 3 : res.acc >= .7 ? 2 : res.acc >= .5 ? 1 : 0;
+  const prevStars = save.stars[lv.id] || 0;
+  save.stars[lv.id] = Math.max(prevStars, stars);
+  save.best[lv.id] = Math.max(save.best[lv.id] || 0, G.score);
+  if (res.boss && !res.failed && !save.certDate) {
+    const d = new Date();
+    save.certDate = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+  }
+  persist();
+  updateHud();
+  show('result');
+  const i = LEVELS.indexOf(lv);
+  $('#resTag').textContent = (lv.boss ? 'FINAL · BOSS' : 'LEVEL ' + (i + 1)) + (stars ? ' · CLEAR' : ' · RETRY');
+  $('#resTitle').textContent = lv.name;
+  $('#resVerdict').textContent = res.boss
+    ? (res.failed ? '盾牌用完了，稽核不通過' : '稽核通過！剩下 ' + res.lives + ' 面盾牌')
+    : stars === 3 ? '完美通關！' : stars ? '過關！再挑戰可以拿更多星' : '還差一點，再試一次就能解鎖下一關';
+  $('#resStars').innerHTML = [0, 1, 2].map(k => '<svg class="' + (k < stars ? 'on' : '') + '" style="--i:' + k + '" aria-hidden="true"><use href="#i-star"/></svg>').join('');
+  $('#resStars').setAttribute('aria-label', stars + ' 顆星');
+  $('#resScore').textContent = G.score;
+  $('#resAcc').textContent = Math.round(res.acc * 100) + '%';
+  $('#resBest').textContent = save.best[lv.id];
+  $('#resTake').innerHTML = lv.take.map(t => '<li>' + icon('i-check') + '<span>' + esc(t) + '</span></li>').join('');
+  const nb = $('#resNext');
+  const nextLv = LEVELS[i + 1];
+  if (lv.boss && !res.failed) { nb.hidden = false; nb.dataset.act = 'cert'; $('span', nb).textContent = '領取結訓證書'; }
+  else if (nextLv && unlocked(i + 1)) { nb.hidden = false; nb.dataset.act = 'next-level'; $('span', nb).textContent = '下一關：' + nextLv.name; }
+  else nb.hidden = true;
+  if (stars) {
+    sfx('clear');
+    if (!reduce) [0, 1, 2].slice(0, stars).forEach(k => setTimeout(() => sfx('star'), 400 + k * 280));
+    if (stars === 3 || (res.boss && !res.failed)) confetti();
+  } else sfx('fail');
+  if (res.boss) sayGroups([res.failed ? 'lose' : 'win']);
+  else if (stars) sayRandom('clear');
+  else say('arale', 'sad', '沒關係，看完本關重點再挑戰一次吧！');
+}
+function showCert() {
+  abortWait();
+  G.token++;
+  setAccent('ok');
+  const r = rankInfo();
+  $('#certName').textContent = save.name || '未命名學員';
+  $('#certNameInput').value = save.name;
+  $('#certRank').textContent = r.cur.name;
+  $('#certStars').textContent = r.stars + ' / 21';
+  $('#certScore').textContent = totalScore().toLocaleString('zh-TW');
+  $('#certDate').textContent = save.certDate || '—';
+  const cleared = LEVELS.filter(l => (save.stars[l.id] || 0) > 0).length;
+  $('#certBody').textContent = cleared === LEVELS.length
+    ? '完成「情資官特訓營」七大關卡訓練，具備內外部情資蒐集、脆弱性識別與風險導向處置的基本能力，並通過稽核關卡驗收。'
+    : '通過「情資官特訓營」稽核關卡驗收，已完成 ' + cleared + ' / ' + LEVELS.length + ' 個關卡。完成全部關卡後，證書會改為正式結訓文字。';
+  show('cert');
+  confetti();
+  sayGroups(['final']);
+}
+function toMap(voice) {
+  abortWait();
+  G.token++;
+  G.bossUI = null;
+  stopVoice();
+  setAccent('int');
+  renderMap();
+  show('map');
+  if (voice) sayGroups(voice);
+}
+
+/* ================= 慶祝特效 ================= */
+function confetti() {
+  if (reduce) return;
+  const cv = $('#fx');
+  const ctx = cv.getContext && cv.getContext('2d');
+  if (!ctx) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = window.innerWidth, H = window.innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(root);
+  const cols = ['--int', '--ext', '--vul', '--ok', '--violet', '--paper'].map(v => cs.getPropertyValue(v).trim());
+  const parts = Array.from({ length: 140 }, () => ({
+    x: W / 2 + (Math.random() - .5) * W * .3, y: H * .35, vx: (Math.random() - .5) * 13, vy: -Math.random() * 13 - 4,
+    s: Math.random() * 7 + 4, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, c: pick(cols)
+  }));
+  const t0 = performance.now();
+  (function frame(t) {
+    const life = (t - t0) / 2600;
+    ctx.clearRect(0, 0, W, H);
+    parts.forEach(p => {
+      p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.globalAlpha = Math.max(0, 1 - life);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+      ctx.restore();
+    });
+    if (life < 1) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+  })(t0);
+}
+
+/* ================= 背景：情資網路 ================= */
+(() => {
+  const cv = $('#bg');
+  const ctx = cv.getContext && cv.getContext('2d');
+  if (!ctx) return;
+  const cs = getComputedStyle(root);
+  const hex = v => { v = v.trim().replace('#', ''); return [0, 2, 4].map(n => parseInt(v.slice(n, n + 2), 16)); };
+  const COL = {};
+  ['int', 'ext', 'vul', 'ok', 'high', 'violet'].forEach(k => { COL[k] = hex(cs.getPropertyValue('--' + k)); });
+  const D = 130;
+  let W = 0, H = 0, nodes = [], col = COL.int.slice();
+  function size() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.round(Math.min(70, Math.max(24, W * H / 20000)));
+    nodes = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .2, vy: (Math.random() - .5) * .2, r: Math.random() * 1.4 + .6 }));
+  }
+  function draw() {
+    const t = COL[root.dataset.accent] || COL.int;
+    for (let n = 0; n < 3; n++) col[n] += (t[n] - col[n]) * .04;
+    const c = (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0);
+    ctx.clearRect(0, 0, W, H);
+    for (const p of nodes) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20;
+      if (p.y < -20) p.y = H + 20; if (p.y > H + 20) p.y = -20;
+    }
+    for (let a = 0; a < nodes.length; a++) {
+      for (let b = a + 1; b < nodes.length; b++) {
+        const dx = nodes[a].x - nodes[b].x, dy = nodes[a].y - nodes[b].y, d2 = dx * dx + dy * dy;
+        if (d2 < D * D) {
+          ctx.strokeStyle = 'rgba(' + c + ',' + ((1 - Math.sqrt(d2) / D) * .13).toFixed(3) + ')';
+          ctx.beginPath(); ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(nodes[b].x, nodes[b].y); ctx.stroke();
+        }
+      }
+    }
+    ctx.fillStyle = 'rgba(' + c + ',.5)';
+    for (const p of nodes) { ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); }
+  }
+  function loop() { draw(); if (!reduce) requestAnimationFrame(loop); }
+  size();
+  window.addEventListener('resize', size);
+  loop();
+})();
+
+/* ================= 互動 ================= */
+let resetArmed = false;
+function syncTitle() {
+  const progress = totalStars() > 0 || Object.keys(save.best).length > 0;
+  $('#startBtn span').textContent = progress ? '繼續特訓' : '開始特訓';
+  $('#resetBtn').hidden = !progress;
+  $('#nameInput').value = save.name;
+}
+document.addEventListener('click', e => {
+  const node = e.target.closest('.node-btn');
+  if (node) {
+    unlockAudio();
+    const i = LEVELS.findIndex(l => l.id === node.dataset.level);
+    if (!unlocked(i)) {
+      sfx('ng');
+      node.closest('.node').classList.remove('shake'); void node.offsetWidth; node.closest('.node').classList.add('shake');
+      say('arale', 'confused', '這關還沒解鎖喔！先在「' + LEVELS[i - 1].name + '」拿到至少一顆星。');
+      return;
+    }
+    sfx('click');
+    openIntro(LEVELS[i]);
+    return;
+  }
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const act = b.dataset.act;
+  unlockAudio();
+  if (act !== 'next') sfx('click');
+  if (act === 'start') {
+    const nm = $('#nameInput').value.trim().slice(0, 12);
+    save.name = nm;
+    persist();
+    const first = !G.introShown;
+    G.introShown = true;
+    toMap(first ? ['intro', 'map'] : null);
+  } else if (act === 'reset') {
+    if (!resetArmed) { resetArmed = true; b.textContent = '確定清除所有進度？再按一次'; b.classList.add('warn'); setTimeout(() => { resetArmed = false; b.textContent = '重新開始'; b.classList.remove('warn'); }, 4000); return; }
+    resetArmed = false;
+    Object.assign(save, { stars: {}, best: {}, certDate: '', unlockAll: false });
+    persist();
+    b.textContent = '重新開始';
+    b.classList.remove('warn');
+    syncTitle();
+    updateHud();
+    say('arale', 'explain', '進度已清除，我們從第一關重新開始吧！');
+  } else if (act === 'to-map') {
+    if (!$('#introModal').hidden) closeIntro();
+    toMap();
+  } else if (act === 'close-intro') closeIntro();
+  else if (act === 'go-level') { if (introLevel) startLevel(introLevel.id); }
+  else if (act === 'retry') { if (G.lv) startLevel(G.lv.id); }
+  else if (act === 'next-level') {
+    const i = G.lv ? LEVELS.indexOf(G.lv) : -1;
+    if (i >= 0 && LEVELS[i + 1]) { toMap(); openIntro(LEVELS[i + 1]); }
+  } else if (act === 'cert') showCert();
+  else if (act === 'unlock') {
+    save.unlockAll = !save.unlockAll;
+    persist();
+    renderMap();
+    say('arale', 'wink', save.unlockAll ? '講師模式開啟，所有關卡都可以直接挑戰！' : '講師模式關閉，回到依序解鎖。');
+  } else if (act === 'voice') {
+    save.voice = !save.voice;
+    persist();
+    if (!save.voice) stopVoice();
+    updateHud();
+  } else if (act === 'sfx') {
+    save.sfx = !save.sfx;
+    persist();
+    updateHud();
+  }
+});
+$('#certNameInput').addEventListener('input', e => {
+  save.name = e.target.value.trim().slice(0, 12);
+  $('#certName').textContent = save.name || '未命名學員';
+  $('#nameInput').value = save.name;
+  persist();
+});
+$('#introModal').addEventListener('click', e => { if (e.target.id === 'introModal') closeIntro(); });
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') {
+    if (e.key === 'Enter' && e.target.id === 'nameInput') $('#startBtn').click();
+    return;
+  }
+  if (e.key === 'Escape') {
+    if (!$('#introModal').hidden) closeIntro();
+    else if (G.screen === 'level' || G.screen === 'result' || G.screen === 'cert') toMap();
+    return;
+  }
+  if (!$('#introModal').hidden && e.key === 'Enter') { e.preventDefault(); $('#goLevelBtn').click(); return; }
+  if (G.screen !== 'level') return;
+  const fb = $('#fb');
+  if (!fb.hidden && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); unlockAudio(); $('[data-act="next"]', fb).click(); return; }
+  if (/^[1-9]$/.test(e.key)) {
+    const btn = $('#lvBody [data-key="' + e.key + '"]:not(:disabled)');
+    if (btn) { e.preventDefault(); unlockAudio(); btn.click(); }
+  }
+});
+
+/* ================= 啟動 ================= */
+syncTitle();
+updateHud();
+setAccent('int');
+show('title');
+})();
+</script>
