@@ -97,6 +97,7 @@
 - **解讀與表格**：每個面板右上角的「解讀」可單獨聽該面板的說明；有圖表的面板可按「表格」切換成數據表。
 - **期間**：上方切換近 7、30、90 天；90 天的告警趨勢以週為單位。
 - **操作**：導覽時 ← → 換步驟，Esc 結束。
+- **手機與嵌入網頁**：手機或畫面高度不足（例如嵌在 Google Sites 的框架裡）時，上方指揮列不固定，解說改放在被解說的面板正下方，隨頁面捲動。
 
 # 修改與重新建置
 
@@ -134,4 +135,5 @@ python3 tools/build.py --target dash       # 戰情儀表板：重新組成 dash
 - **改唸法**：`tools/gen_audio.py` 的 `SAY` 清單只影響語音，例如把「A.5.7」唸成「A 五點七」。
 - **改署名或日期**：「製作：Allan顧問，2027/10/17」在 `src/template.html` 出現三處，在 `game/src/template.html` 出現兩處，在 `dashboard/src/template.html` 出現兩處。
 - **重新裁切角色圖**：調整 `tools/crop_sprites.py` 的裁切框後執行 `python3 tools/crop_sprites.py`，需要 Pillow 與 numpy。
+- **嵌入 Google Sites 等網頁**：三個版本導覽或切換時只捲動自己的畫面，不會帶動外層網頁。
 - **網路連線**：產生配音時 edge-tts 會連到 `speech.platform.bing.com`（WebSocket，443 埠）；在有網域白名單的環境要先放行。

@@ -337,6 +337,11 @@ body.touring .card:not(.spot),body.touring .ticker:not(.spot),body.touring .zone
 .dr-dots i.on{background:var(--int)}
 .dr-dots i.done{background:color-mix(in srgb,var(--int) 45%,var(--rule))}
 @media (max-width:979px){.dr-nav{position:sticky;bottom:calc(-12px - env(safe-area-inset-bottom,0px));z-index:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 -16px calc(-12px - env(safe-area-inset-bottom,0px));padding:8px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--void);border-top:1px solid var(--rule)}.dr-nav .btn{justify-content:center;padding:0 6px;gap:4px;font-size:13px}.dr-dots{grid-column:1/-1;order:-1;justify-content:center}}
+/* 手機或畫面高度不足（例如嵌在 Google Sites 的 iframe）：指揮列不固定，解說改放在被解說的面板正下方，隨頁面捲動 */
+@media (max-width:760px),(max-height:540px){.top{position:relative}.card,.zone-head{scroll-margin-top:12px}}
+.tour-inline{grid-column:1/-1;position:relative;z-index:3;padding:14px;border-radius:14px;background:var(--void-glass);border:1px solid color-mix(in srgb,var(--int) 55%,var(--rule));box-shadow:0 0 34px -12px var(--int);scroll-margin-top:12px;animation:drawerin .35s cubic-bezier(.2,.9,.3,1)}
+.tour-inline.drill{border-color:var(--crit);box-shadow:0 0 34px -12px var(--crit)}
+@media (max-width:979px){.tour-inline .dr-nav{bottom:0;margin:0 -14px -14px;padding:8px 14px 12px;border-radius:0 0 14px 14px}}
 
 /* ---------- 開場 ---------- */
 .welcome{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:var(--scrim);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -1453,17 +1458,37 @@ const DRILL = [
 /* ================= 導覽控制 ================= */
 const T = { mode: null, i: 0, auto: true, single: false, token: 0 };
 const drawer = $('#drawer');
+// 手機或畫面高度不足（例如嵌在 Google Sites 的 iframe）時，解說改放在面板正下方，不固定佔住畫面
+const inlineMQ = window.matchMedia('(max-width: 760px), (max-height: 540px)');
+const drInner = $('.dr-inner', drawer);
+const inlineBox = h('section', 'tour-inline');
+inlineBox.setAttribute('aria-label', '戰情解說');
+inlineBox.hidden = true;
+function placeGuide() {
+  const inline = !!T.mode && inlineMQ.matches;
+  if (inline) {
+    const id = steps()[T.i].targets[0];
+    const anchor = id && document.getElementById(id);
+    if (anchor) anchor.after(inlineBox); else $('#board').prepend(inlineBox);
+    if (drInner.parentNode !== inlineBox) inlineBox.appendChild(drInner);
+    inlineBox.classList.toggle('drill', T.mode === 'drill');
+  } else if (drInner.parentNode !== drawer) drawer.appendChild(drInner);
+  inlineBox.hidden = !inline;
+  drawer.hidden = !T.mode || inline;
+}
+inlineMQ.addEventListener('change', () => { if (T.mode) placeGuide(); });
 function steps() { return T.mode === 'drill' ? DRILL : TOUR; }
 function spotlight(ids) {
   $$('.spot').forEach(e => e.classList.remove('spot'));
   document.body.classList.toggle('touring', ids.length > 0);
   ids.forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('spot'); });
   const first = ids.length ? document.getElementById(ids[0]) : null;
-  if (first) first.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-  else window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  // 只捲動戰情室本身：scrollIntoView 會連帶捲動嵌入本頁的外層網頁（例如 Google Sites）
+  const y = first ? first.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(first).scrollMarginTop) || 0) : 0;
+  window.scrollTo({ top: Math.max(0, y), behavior: reduce ? 'auto' : 'smooth' });
 }
 function fillDrawer(s, i, n) {
-  drawer.hidden = false;
+  placeGuide();
   drawer.scrollTop = 0;
   drawer.classList.toggle('drill', T.mode === 'drill');
   $('#drStep').textContent = T.mode === 'drill' ? '情境演練' : '導覽 ' + (i + 1) + ' / ' + n;
@@ -1529,7 +1554,7 @@ function closeDrawer() {
   T.token++;
   T.mode = null;
   stopVoice();
-  drawer.hidden = true;
+  placeGuide();
   document.body.classList.remove('touring');
   $$('.spot').forEach(e => e.classList.remove('spot'));
   document.body.style.setProperty('--drawer-h', '0px');
@@ -1578,10 +1603,10 @@ document.addEventListener('keydown', e => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === 'Escape') {
     if (!$('#welcome').hidden) $('#welcome').hidden = true;
-    else if (!drawer.hidden) closeDrawer();
+    else if (T.mode) closeDrawer();
     return;
   }
-  if (drawer.hidden || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (!T.mode || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if (e.key === 'ArrowRight') { e.preventDefault(); nextStep(); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); T.single = false; goStep(T.i - 1); }
 });
@@ -1608,6 +1633,6 @@ const now = new Date();
 $('#updated').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
 renderAll({ instantBrief: false });
 lastW = $('#board').clientWidth;
-$('#welcome [data-act="tour"]').focus();
+if (window.self === window.top) $('#welcome [data-act="tour"]').focus({ preventScroll: true });
 })();
 </script>

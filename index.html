@@ -2018,6 +2018,10 @@ function nearestScene() {
   scenes.forEach((s, k) => { if (s.getBoundingClientRect().top <= 90) best = k; });
   return best;
 }
+// 只捲動簡報本身：scrollIntoView 會連帶捲動嵌入本頁的外層網頁（例如 Google Sites）
+function scrollToScene(el) {
+  window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0)));
+}
 function setMode(m, initial) {
   st.mode = m;
   root.classList.toggle('mode-play', m === 'play');
@@ -2035,7 +2039,7 @@ function setMode(m, initial) {
     finalAll();
     startAmbient();
     updateChrome();
-    if (!initial || st.i > 0) requestAnimationFrame(() => scenes[st.i].scrollIntoView({ block: 'start' }));
+    if (!initial || st.i > 0) requestAnimationFrame(() => scrollToScene(scenes[st.i]));
   } else {
     stopAmbient();
     window.scrollTo(0, 0);
@@ -2083,7 +2087,7 @@ document.addEventListener('click', e => {
 selScenes.forEach(sel => sel.addEventListener('change', () => {
   const k = +sel.value;
   if (st.mode === 'play') go(k, 0);
-  else { st.i = k; updateChrome(); scenes[k].scrollIntoView({ block: 'start' }); }
+  else { st.i = k; updateChrome(); scrollToScene(scenes[k]); }
   sel.blur();
 }));
 selRate.addEventListener('change', () => {

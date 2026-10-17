@@ -1064,7 +1064,7 @@ function openIntro(lv) {
   $('#mcLearn').innerHTML = lv.take.map(t => '<li>' + icon('i-check') + '<span>' + esc(t) + '</span></li>').join('');
   $('#introModal').hidden = false;
   setAccent(lv.accent);
-  $('#goLevelBtn').focus();
+  $('#goLevelBtn').focus({ preventScroll: true });
 }
 function closeIntro() { $('#introModal').hidden = true; introLevel = null; setAccent('int'); }
 
@@ -1148,6 +1148,12 @@ function wrong(anchor, quiet) {
   if (anchor) popPts('+0', anchor, true);
   if (!quiet) sayRandom('ng');
 }
+// 只捲動遊戲本身，把元素帶進畫面：scrollIntoView 會連帶捲動嵌入本頁的外層網頁（例如 Google Sites）
+function revealInPage(el) {
+  const r = el.getBoundingClientRect();
+  const dy = r.bottom > window.innerHeight ? Math.min(r.bottom - window.innerHeight + 12, r.top - 12) : r.top < 0 ? r.top - 12 : 0;
+  if (dy) window.scrollBy({ top: dy, behavior: reduce ? 'auto' : 'smooth' });
+}
 function feedback(kind, title, text, btn) {
   const fb = $('#fb');
   fb.className = 'feedback ' + kind;
@@ -1156,7 +1162,7 @@ function feedback(kind, title, text, btn) {
   $('.fb-text', fb).textContent = text;
   $('[data-act="next"] span', fb).textContent = btn || '下一題';
   fb.hidden = false;
-  requestAnimationFrame(() => fb.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }));
+  requestAnimationFrame(() => revealInPage(fb));
   const nextBtn = $('[data-act="next"]', fb);
   nextBtn.focus({ preventScroll: true });
   return waitFor(done => {
