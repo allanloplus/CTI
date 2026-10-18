@@ -104,7 +104,11 @@ ul,ol{margin:0;padding:0;list-style:none}
 .scene-inner{height:100%;overflow:auto;padding:24px 44px 14px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin}
 .mode-read .scene{position:relative;inset:auto;opacity:1;visibility:visible;border-top:1px solid var(--rule);overflow-x:clip}
 .mode-read .scene:first-child{border-top:0}
-.mode-read .scene{scroll-margin-top:60px}
+.mode-read .scene{scroll-margin-top:calc(var(--top-h,52px) + 8px)}
+/* 閱讀模式效能：畫面外的段落不繪製、不跑動畫；整頁捲出畫面（例如嵌在 Google Sites）時暫停動畫，減輕手機記憶體負擔 */
+.mode-read .scene{content-visibility:auto;contain-intrinsic-size:auto 1500px}
+.mode-read .scene.is-far *,.mode-read .scene.is-far ::before,.mode-read .scene.is-far ::after{animation:none!important}
+.is-unseen *,.is-unseen ::before,.is-unseen ::after{animation-play-state:paused!important}
 .mode-read .scene-inner{height:auto;overflow:visible;max-width:1240px;margin:0 auto;padding-block:44px 52px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));gap:18px}
 
 .sweep{position:absolute;left:0;right:0;top:0;height:130px;pointer-events:none;opacity:0;z-index:6;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--accent) 18%,transparent) 70%,var(--accent) 97%,transparent)}
@@ -571,6 +575,31 @@ ul,ol{margin:0;padding:0;list-style:none}
 @media (max-width:1100px){.count{display:none}}
 @media (max-width:900px){.segs{visibility:hidden}.transport .sel-scene{width:160px}}
 @media (max-width:520px){.brand-name{display:none}}
+/* 手機直式播放：不用縮小的 16:9 舞台，改在閱讀版面上依序播放串場語音，頂列顯示目前台詞與控制鈕 */
+.narr,.narr-ctl,.lbl-narr{display:none}
+.narr-ctl{align-items:center;gap:6px;flex:none}
+.narr{flex:1 0 100%;align-items:flex-start;gap:10px;min-width:0}
+.narr-face{width:38px;height:38px;flex:none;border-radius:50%;object-fit:cover;object-position:50% 16%;background:var(--deck-hi);border:2px solid var(--paper)}
+.narr-face.arale{border-color:var(--int)}
+.narr-text{flex:1;min-width:0;max-height:calc(3 * 1.45em);overflow-y:auto;display:flex;flex-direction:column-reverse;font-size:14px;line-height:1.45;scrollbar-width:none}
+.narr-text b{color:var(--accent);margin-right:6px;transition:color .6s}
+.t-line.is-speaking .bubble{box-shadow:0 0 0 2px var(--accent)}
+@media (max-width:759px),(max-height:459px){
+  #modeBtn,.mode-read .top-actions{display:none}
+  .mode-read .topbar{flex-wrap:wrap;row-gap:8px;gap:10px;background:var(--void);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .mode-read .narr-ctl,.mode-read .narr{display:flex}
+  .mode-read .cta .lbl-read{display:none}
+  .mode-read .cta .lbl-narr{display:inline}
+}
+/* 手機橫放：台詞與控制鈕放同一列，少佔高度 */
+@media (max-height:459px) and (min-width:760px){
+  .mode-read .topbar{flex-wrap:nowrap}
+  .mode-read .brand-name,.mode-read .top-credit{display:none}
+  .mode-read .sel-top{flex:0 1 210px}
+  .mode-read .narr{flex:1 1 0;order:1;align-items:center}
+  .mode-read .narr-ctl{order:2}
+  .mode-read .narr-text{max-height:calc(2 * 1.45em)}
+}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -635,9 +664,18 @@ ul,ol{margin:0;padding:0;list-style:none}
     <p class="now" id="now"><b>01 / 13</b>開場</p>
     <label class="sel-top"><span class="sr-only">跳到主題</span><select class="sel sel-scene" id="selSceneTop" title="跳到主題"></select></label>
     <span class="top-credit">製作：Allan顧問，2027/10/17</span>
+    <div class="narr-ctl">
+      <button class="ctl ctl--sm" type="button" data-act="prev-line" aria-label="上一句"><svg><use href="#i-chev-l"/></svg></button>
+      <button class="ctl ctl--main" type="button" data-act="toggle" id="narrToggle" aria-label="播放"><svg><use href="#i-play"/></svg></button>
+      <button class="ctl ctl--sm" type="button" data-act="next-line" aria-label="下一句"><svg><use href="#i-chev-r"/></svg></button>
+    </div>
     <div class="top-actions">
       <button class="btn" type="button" id="modeBtn" data-act="mode"><svg><use href="#i-read"/></svg><span class="mode-lbl">閱讀模式</span></button>
       <button class="btn" type="button" data-act="full" aria-label="全螢幕"><svg><use href="#i-full"/></svg><span class="lbl-long">全螢幕</span></button>
+    </div>
+    <div class="narr" id="narr">
+      <img class="narr-face arale" id="narrFace" alt="">
+      <div class="narr-text"><span id="narrLine"><b>語音播放</b>按 ▶ 從目前的段落開始播放，畫面會自動捲到正在講解的地方。</span></div>
     </div>
   </header>
 
@@ -665,7 +703,7 @@ ul,ol{margin:0;padding:0;list-style:none}
                   <li style="--c:var(--ok)">AI 情資融合</li>
                 </ul>
                 <div class="hero-cta">
-                  <button class="cta" type="button" data-act="start"><svg><use href="#i-play"/></svg><span class="lbl-play">開始播放</span><span class="lbl-read">播放動畫版</span></button>
+                  <button class="cta" type="button" data-act="start"><svg><use href="#i-play"/></svg><span class="lbl-play">開始播放</span><span class="lbl-read">播放動畫版</span><span class="lbl-narr">開始語音播放</span></button>
                 </div>
                 <p class="credit">製作：<b>Allan顧問</b>，2027/10/17</p>
                 <p class="hint">空白鍵 播放／暫停｜← → 上一句／下一句｜PgUp／PgDn 換段｜M 靜音｜F 全螢幕</p>
@@ -1390,6 +1428,13 @@ const selRate = $('#selRate');
 const selScenes = $$('.sel-scene');
 const dockHosts = $$('#dock .host');
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* 手機或高度不足：縮小的 16:9 舞台看不清楚，改用閱讀版面播放 */
+const compactMQ = window.matchMedia('(max-width: 759px), (max-height: 459px)');
+const topbar = $('.topbar');
+const narrToggle = $('#narrToggle');
+const narrFace = $('#narrFace');
+const narrLine = $('#narrLine');
+narrFace.src = SPR.arale.laugh;
 const st = { i: 0, line: -1, playing: false, mode: 'play', token: 0, k: 1, rate: 1, muted: false, t0: 0, fill: null };
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1933,12 +1978,14 @@ function sweep() {
   void el.offsetWidth;
   el.classList.add('run');
 }
-function setPlaying(p) {
+function setPlaying(p, at) {
   st.playing = p;
   $('use', toggleBtn).setAttribute('href', p ? '#i-pause' : '#i-play');
   toggleBtn.setAttribute('aria-label', p ? '暫停（空白鍵）' : '播放（空白鍵）');
   toggleBtn.title = p ? '暫停（空白鍵）' : '播放（空白鍵）';
-  if (st.mode !== 'play') return;
+  $('use', narrToggle).setAttribute('href', p ? '#i-pause' : '#i-play');
+  narrToggle.setAttribute('aria-label', p ? '暫停' : '播放');
+  if (st.mode !== 'play') { readPlay(p, at); return; }
   st.token++;
   const token = st.token;
   const scene = scenes[st.i];
@@ -1983,13 +2030,99 @@ function jumpLine(L) {
   const scene = scenes[st.i];
   if (st.playing) runDialogue(scene, token, L); else showStatic(scene, L);
 }
+/* ---------- 閱讀版面的連續播放（手機直式播放） ---------- */
+function narrShow(scene, n, typed) {
+  const [who, face, text] = linesOf(scene)[n];
+  $$('.t-line.is-speaking').forEach(r => r.classList.remove('is-speaking'));
+  const row = $$('.t-line', scene)[n];
+  if (row) row.classList.add('is-speaking');
+  narrFace.src = faceSrc(who, face);
+  narrFace.className = 'narr-face ' + who;
+  narrLine.textContent = '';
+  const b = document.createElement('b');
+  b.textContent = NAMES[who] + '：';
+  const t = document.createElement('span');
+  t.textContent = typed ? '' : text;
+  narrLine.append(b, t);
+  return t;
+}
+async function narrate(token) {
+  const scene = scenes[st.i];
+  const lines = linesOf(scene);
+  for (let n = Math.max(0, st.line); n < lines.length; n++) {
+    if (token !== st.token) return;
+    st.line = n;
+    const [who, , text] = lines[n];
+    const el = narrShow(scene, n, true);
+    srLine.textContent = NAMES[who] + '：' + text;
+    const clip = AUD[clipId(scene, n)];
+    const ms = lineMs(scene, n) / st.rate;
+    const typing = typeOver(el, text, ms * 0.82, token);
+    const voice = clip
+      ? playClip(clip.src).catch(() => (token === st.token ? speakTTS(who, text, ms) : null))
+      : speakTTS(who, text, ms);
+    await Promise.all([typing, voice]);
+    if (token !== st.token) return;
+    await sleep(GAP_LINE / st.rate);
+  }
+  if (token !== st.token) return;
+  st.line = lines.length;
+  const d = DEMOS[scene.id];
+  const left = d && d.replay ? (MIN_MS[scene.id] || 0) - (performance.now() - st.t0) : 0;
+  await sleep(Math.max(GAP_SCENE * 1.5, left));
+  if (token !== st.token || !st.playing) return;
+  if (st.i < scenes.length - 1) narrGo(st.i + 1, 0, true);
+  else setPlaying(false);
+}
+/* 到第 i 段第 from 句；scroll 為 true 時捲到該段開頭，播放中會順便重跑該段的示範動畫 */
+function narrGo(i, from, scroll) {
+  st.token++;
+  const token = st.token;
+  stopVoice();
+  st.i = Math.max(0, Math.min(scenes.length - 1, i));
+  const scene = scenes[st.i];
+  st.line = Math.max(0, Math.min(linesOf(scene).length - 1, from));
+  updateChrome();
+  if (scroll) {
+    st.t0 = performance.now();
+    scrollToScene(scene);
+    const d = DEMOS[scene.id];
+    if (st.playing && d && d.replay) setTimeout(() => { if (token === st.token) d.replay(); }, 500);
+  }
+  if (st.playing) narrate(token);
+  else narrShow(scene, st.line, false);
+}
+function readPlay(p, at) {
+  if (p) {
+    const k = at != null ? at : nearestScene();
+    const n = linesOf(scenes[k]).length;
+    // 同一段且還沒唸完就接著唸，否則從畫面上這段的開頭開始
+    if (at == null && k === st.i && st.line >= 0 && st.line < n) narrGo(k, st.line, false);
+    else narrGo(k, 0, true);
+  } else {
+    st.token++;
+    stopVoice();
+    const scene = scenes[st.i];
+    if (st.line >= 0 && st.line < linesOf(scene).length) narrShow(scene, st.line, false);
+  }
+}
+function narrStep(dir) {
+  const n = linesOf(scenes[st.i]).length;
+  if (st.line < 0) { narrGo(st.i, 0, false); return; }
+  const t = Math.min(st.line, n) + dir;
+  if (t >= 0 && t < n) narrGo(st.i, t, false);
+  else if (dir > 0 && st.i < scenes.length - 1) narrGo(st.i + 1, 0, true);
+  else if (dir < 0 && st.i > 0) narrGo(st.i - 1, linesOf(scenes[st.i - 1]).length - 1, true);
+}
 function nextLine() {
+  if (st.mode === 'read') { narrStep(1); return; }
   const n = linesOf(scenes[st.i]).length;
   const target = st.line + 1;
   if (target < n) jumpLine(target);
   else if (st.i < scenes.length - 1) go(st.i + 1, 0);
 }
 function prevLine() {
+  if (st.mode === 'read') { narrStep(-1); return; }
   const n = linesOf(scenes[st.i]).length;
   const target = Math.min(st.line, n) - 1;
   if (target >= 0) jumpLine(target);
@@ -2014,13 +2147,23 @@ function fit() {
   canvas.style.setProperty('--k', st.k.toFixed(4));
 }
 function nearestScene() {
+  const lim = topbar.offsetHeight + 40;
   let best = 0;
-  scenes.forEach((s, k) => { if (s.getBoundingClientRect().top <= 90) best = k; });
+  scenes.forEach((s, k) => { if (s.getBoundingClientRect().top <= lim) best = k; });
   return best;
 }
 // 只捲動簡報本身：scrollIntoView 會連帶捲動嵌入本頁的外層網頁（例如 Google Sites）
 function scrollToScene(el) {
-  window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0)));
+  const y = () => Math.max(0, el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0));
+  // 畫面外的段落先以預估高度排版，捲到後附近段落才換成實際高度，所以連續校正到位置穩定為止
+  let tries = 0, stable = 0;
+  const fix = () => {
+    const t = y();
+    if (Math.abs(t - window.scrollY) > 2) { window.scrollTo(0, t); stable = 0; } else stable++;
+    if (stable < 2 && ++tries < 12) requestAnimationFrame(() => requestAnimationFrame(fix));
+  };
+  window.scrollTo(0, y());
+  requestAnimationFrame(() => requestAnimationFrame(fix));
 }
 function setMode(m, initial) {
   st.mode = m;
@@ -2060,6 +2203,7 @@ document.addEventListener('click', e => {
   const tp = e.target.closest('.t-play');
   if (tp) {
     unlockAudio();
+    if (st.playing) setPlaying(false);
     stopVoice();
     const c = AUD[tp.dataset.clip];
     if (c) playClip(c.src).catch(() => {});
@@ -2070,7 +2214,10 @@ document.addEventListener('click', e => {
   if (b.dataset.demo) { const d = DEMOS[b.dataset.demo]; if (d && d.replay) d.replay(); return; }
   const act = b.dataset.act;
   unlockAudio();
-  if (act === 'start' || act === 'replay') {
+  if ((act === 'start' || act === 'replay') && compactMQ.matches) {
+    if (st.mode !== 'read') setMode('read');
+    setPlaying(true, 0);
+  } else if (act === 'start' || act === 'replay') {
     st.i = 0;
     st.playing = false;
     if (st.mode !== 'play') setMode('play'); else go(0, 0, { quiet: true });
@@ -2087,7 +2234,8 @@ document.addEventListener('click', e => {
 selScenes.forEach(sel => sel.addEventListener('change', () => {
   const k = +sel.value;
   if (st.mode === 'play') go(k, 0);
-  else { st.i = k; updateChrome(); scrollToScene(scenes[k]); }
+  else if (st.playing) narrGo(k, 0, true);
+  else { st.i = k; st.line = -1; updateChrome(); scrollToScene(scenes[k]); }
   sel.blur();
 }));
 selRate.addEventListener('change', () => {
@@ -2118,11 +2266,11 @@ document.addEventListener('keydown', e => {
 });
 let scrollRaf = 0;
 window.addEventListener('scroll', () => {
-  if (st.mode !== 'read' || scrollRaf) return;
+  if (st.mode !== 'read' || st.playing || scrollRaf) return;
   scrollRaf = requestAnimationFrame(() => {
     scrollRaf = 0;
     const k = nearestScene();
-    if (k !== st.i) { st.i = k; updateChrome(); }
+    if (k !== st.i) { st.i = k; st.line = -1; updateChrome(); }
   });
 }, { passive: true });
 if (window.ResizeObserver) new ResizeObserver(fit).observe(viewport);
@@ -2138,13 +2286,14 @@ if (window.speechSynthesis && speechSynthesis.getVoices) speechSynthesis.getVoic
   const hex = v => { v = v.trim().replace('#', ''); return [0, 2, 4].map(n => parseInt(v.slice(n, n + 2), 16)); };
   const COL = { int: hex(cs.getPropertyValue('--int')), ext: hex(cs.getPropertyValue('--ext')), vul: hex(cs.getPropertyValue('--vul')), ok: hex(cs.getPropertyValue('--ok')) };
   const D = 140;
-  let W = 0, H = 0, nodes = [], pk = [], col = COL.int.slice();
+  let W = 0, H = 0, nodes = [], pk = [], col = COL.int.slice(), lite = false, last = 0;
   function size() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    lite = compactMQ.matches;   // 手機：一倍解析度、較少節點、不加光暈、約 30 fps
+    const dpr = lite ? 1 : Math.min(2, window.devicePixelRatio || 1);
     W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.round(Math.min(90, Math.max(28, W * H / 15000)));
+    const n = Math.round(lite ? Math.min(36, Math.max(18, W * H / 15000)) : Math.min(90, Math.max(28, W * H / 15000)));
     nodes = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .22, vy: (Math.random() - .5) * .22, r: Math.random() * 1.5 + .6 }));
     pk = [];
   }
@@ -2179,7 +2328,7 @@ if (window.speechSynthesis && speechSynthesis.getVoices) speechSynthesis.getVoic
     }
     ctx.fillStyle = 'rgba(' + c + ',.95)';
     ctx.shadowColor = 'rgba(' + c + ',1)';
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = lite ? 0 : 8;
     for (let n = pk.length - 1; n >= 0; n--) {
       const q = pk[n];
       q.t += .018;
@@ -2190,7 +2339,12 @@ if (window.speechSynthesis && speechSynthesis.getVoices) speechSynthesis.getVoic
     }
     ctx.shadowBlur = 0;
   }
-  function loop() { draw(); if (!reduce) requestAnimationFrame(loop); }
+  function loop(t) {
+    if (!reduce) requestAnimationFrame(loop);
+    if (t !== undefined && (document.hidden || root.classList.contains('is-unseen') || (lite && t - last < 32))) return;
+    last = t || 0;
+    draw();
+  }
   size();
   window.addEventListener('resize', size);
   loop();
@@ -2199,7 +2353,18 @@ if (window.speechSynthesis && speechSynthesis.getVoices) speechSynthesis.getVoic
 /* ---------- 啟動 ---------- */
 const hashIdx = scenes.findIndex(s => '#' + s.id === location.hash);
 st.i = hashIdx >= 0 ? hashIdx : 0;
-if (window.innerWidth < 760 || window.innerHeight < 460) setMode('read', true);
+/* 畫面外的段落停止動畫（不支援 content-visibility 的瀏覽器也有效）；整頁捲出畫面時暫停動畫與背景 */
+if ('IntersectionObserver' in window) {
+  const far = es => es.forEach(e => e.target.classList.toggle('is-far', !e.isIntersecting));
+  let io;
+  try { io = new IntersectionObserver(far, { root: document, rootMargin: '50% 0px' }); } catch (e) { io = new IntersectionObserver(far, { rootMargin: '50% 0px' }); }
+  scenes.forEach(s => io.observe(s));
+  new IntersectionObserver(es => root.classList.toggle('is-unseen', !es[0].isIntersecting)).observe($('.app'));
+}
+if (window.ResizeObserver) new ResizeObserver(() => root.style.setProperty('--top-h', topbar.offsetHeight + 'px')).observe(topbar);
+const onCompact = () => { if (compactMQ.matches && st.mode === 'play') setMode('read'); };
+if (compactMQ.addEventListener) compactMQ.addEventListener('change', onCompact); else if (compactMQ.addListener) compactMQ.addListener(onCompact);
+if (compactMQ.matches) setMode('read', true);
 else setMode('play', true);
 })();
 </script>
